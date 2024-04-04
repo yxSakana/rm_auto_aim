@@ -1,0 +1,25 @@
+/hik_camera_node:
+  ros__parameters:
+    camera_info_url: package://auto_aim/config/CS-016.yaml
+    exposure_time: 4000.0
+    gain: 16.77
+
+/custom_serial_node:
+  ros__parameters:
+    device_name: /dev/ttyACM0
+    baud_rate: 115200
+    flow_control: none
+    parity: none
+    stop_bits: "1"
+
+/armor_detector_node:
+  ros__parameters:
+    model_path: opt-0527-001.onnx
+    inference_driver: AUTO
+    detect_color: BLUE
+
+/armor_tracker_node:
+  ros__parameters:
+    r_diagonal: [5000.0, 8000.0, 50.0, 200.0]  # x y z yaw
+    q_diagonal: [20.0, 0.01, 20.0, 0.01, 1.0, 0.01, 1.0, 0.5, 0.1] # x vx y vy z vz yaw v_yaw r
+    odom_frame: "odom"
