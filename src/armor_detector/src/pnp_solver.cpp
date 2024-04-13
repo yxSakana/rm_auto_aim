@@ -61,4 +61,10 @@ bool PnPSolver::pnpSolver(const auto_aim_interfaces::msg::Armor& armor,
         return false;
     }
 }
+
+double PnPSolver::getDistance(const cv::Point2f& p) {
+    float cx = m_intrinsic_matrix.at<double>(0, 2);
+    float cy = m_intrinsic_matrix.at<double>(1, 2);
+    return cv::norm(p - cv::Point2f(cx, cy));
+}
 } // armor_auto_aim

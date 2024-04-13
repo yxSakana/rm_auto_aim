@@ -9,6 +9,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Armor.msg"
   "msg/Armors.msg"
   "msg/Target.msg"
+  "msg/ControllerAim.msg"
+  "msg/DebugAngle.msg"
   DEPENDENCIES
     std_msgs
     geometry_msgs

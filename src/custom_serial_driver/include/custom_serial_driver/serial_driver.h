@@ -29,9 +29,6 @@ private:
     // Service
     rclcpp::Service<custom_serial_interfaces::srv::SendPackage>::SharedPtr m_send_service;
 
-    // std::thread m_t;
-    // rclcpp::Subscription<custom_serial_interfaces::msg::Receive>::SharedPtr m_t_sub;
-
     void initParamenters();
     
     void reopen();

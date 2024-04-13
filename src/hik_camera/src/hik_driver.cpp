@@ -153,7 +153,7 @@ bool HikDriver::findDriver(int mode) {
     error_code = MV_CC_EnumDevices(mode, &m_devices);
     if (!checkErrorCode(error_code, "findDriver") || m_devices.nDeviceNum <= 0) {
         m_opened_status = m_initialized_frame_info = false;
-        LOG(WARNING) << "No hik camera devices";
+        RCLCPP_WARN(rclcpp::get_logger("hik_camera"), "No hik camera devices");
         return false;
     }
     RCLCPP_INFO_STREAM(rclcpp::get_logger("hik_camera"), fmt::format("Number of available Hik-devices: {}", m_devices.nDeviceNum));

@@ -1,8 +1,10 @@
 std_msgs/Header header
 bool tracking
+uint8 id
 geometry_msgs/Point position
 geometry_msgs/Vector3 velocity
 uint8 num
+uint8 delay
 float64 yaw
 float64 v_yaw
 float64 r1

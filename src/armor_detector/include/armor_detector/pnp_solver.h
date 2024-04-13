@@ -23,6 +23,8 @@ public:
 
     bool pnpSolver(const auto_aim_interfaces::msg::Armor& armor,
         const std::vector<cv::Point2f>& img_points, cv::Mat& rvec, cv::Mat& tvec);
+
+    double getDistance(const cv::Point2f& p);
 private:
     // Unit: mm
     static constexpr float SMALL_ARMOR_WIDTH = 135;

@@ -2,6 +2,7 @@
 
 #include <armor_tracker/tracker_node.h>
 
+// ROS2
 #include <tf2_ros/create_timer_ros.h>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
@@ -10,7 +11,7 @@ namespace armor_auto_aim {
 ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions& options)
     : Node("armor_tracker_node", options) {
     // Parameter
-    this->declare_parameter("r_diagonal", std::vector<double>{10000, 1000, 200, 2000, 1});
+    this->declare_parameter("r_diagonal", std::vector<double>{1, 1, 1, 1, 1});
     this->declare_parameter("q_diagonal", std::vector<double>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
     m_odom_frame = this->declare_parameter("odom_frame", "odom");
     // tf buffer
@@ -30,6 +31,9 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions& options)
     // Publisher
     m_target_pub = this->create_publisher<
         auto_aim_interfaces::msg::Target>("/armor_tracker/target", rclcpp::SensorDataQoS());
+    m_odom_pose_pub = this->create_publisher<geometry_msgs::msg::Pose>("/armor_tracker/debug/odom_pose", 10);
+    m_yaw_pub = this->create_publisher<std_msgs::msg::Float64>("/armor_tracker/message_yaw", 10);
+    m_debug_angle = this->create_publisher<auto_aim_interfaces::msg::DebugAngle>("/debug/angle", 10);
     // Marker
     // car center
     m_center_marker.ns = "center";
@@ -58,17 +62,14 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions& options)
     m_armors_marker.type = visualization_msgs::msg::Marker::CUBE;
     m_armors_marker.scale.x = 0.03;
     m_armors_marker.scale.y = 0.135;
-    m_armors_marker.scale.z = 0.05;
+    m_armors_marker.scale.z = 0.125;
     m_armors_marker.color.a = 1.0;
-    m_armors_marker.color.r = 1.0;
+    m_armors_marker.color.g = 1.0;
     // marker publisher
     m_marker_pub = this->create_publisher<
         visualization_msgs::msg::MarkerArray>("/armor_tracker/marker", 10);
     //
     initEkf();
-
-    m_armor_odom_pub = this->create_publisher<geometry_msgs::msg::Pose>("/debug/armor_odom", rclcpp::SensorDataQoS());
-    m_armor_gimbal_pub = this->create_publisher<geometry_msgs::msg::Pose>("/debug/armor_gimbal", rclcpp::SensorDataQoS());
 }
 
 void ArmorTrackerNode::subArmorsCallback(const auto_aim_interfaces::msg::Armors::SharedPtr armos_msg) {
@@ -78,10 +79,6 @@ void ArmorTrackerNode::subArmorsCallback(const auto_aim_interfaces::msg::Armors:
         ps.pose = armor.pose;
         try {
             armor.world_pose = m_tf_buffer->transform(ps, m_odom_frame).pose;
-            float x = armor.world_pose.position.x, y = armor.world_pose.position.y, z = armor.world_pose.position.z;
-            m_armor_odom_pub->publish(armor.world_pose);
-            // auto p = m_tf_buffer->transform(ps, "gimbal_link").pose;
-            // m_armor_gimbal_pub->publish(p);
         } catch (const tf2::ExtrapolationException& e) {
             RCLCPP_ERROR(this->get_logger(), "armor pose to odom");
             return;
@@ -115,6 +112,26 @@ void ArmorTrackerNode::subArmorsCallback(const auto_aim_interfaces::msg::Armors:
             target_msg.r2 = m_tracker.another_r;
             target_msg.dz = m_tracker.dz;
             target_msg.num = m_tracker.getNum();
+            target_msg.delay = dt * 1000;
+            target_msg.id = m_tracker.tracked_armor.number;
+            // message yaw
+            auto q = m_tracker.tracked_armor.world_pose.orientation;
+            tf2::Quaternion tf_q;
+            tf2::fromMsg(q, tf_q);
+            double r, p, y;
+            tf2::Matrix3x3(tf_q).getRPY(r, p, y);
+            std_msgs::msg::Float64 yaw_msg;
+            yaw_msg.data = y;
+            // Debug angle
+            auto_aim_interfaces::msg::DebugAngle debug_angle;
+            debug_angle.header = armos_msg->header;
+            auto tp = target_msg.position;
+            debug_angle.yaw = std::atan2(tp.y, tp.x) * 180.0 / M_PI;
+            debug_angle.pitch = std::atan2(std::sqrt(tp.y*tp.y + tp.x*tp.x), tp.x) * 180.0 / M_PI;
+
+            m_odom_pose_pub->publish(m_tracker.tracked_armor.world_pose);
+            m_yaw_pub->publish(yaw_msg);
+            m_debug_angle->publish(debug_angle);
         }
     }
 
@@ -151,14 +168,8 @@ void ArmorTrackerNode::initEkf() {
     auto h = [](const Eigen::VectorXd& x)->Eigen::MatrixXd {
         Eigen::VectorXd z(4);
         double xc = x[0], yc = x[2], yaw = x[6], r = x[8];
-#ifdef USE_SIN
-        z[0] = xc - r*sin(yaw);
-        z[1] = yc - r*cos(yaw);
-#endif
-#ifdef USE_COS
         z[0] = xc - r*cos(yaw);
         z[1] = yc - r*sin(yaw);
-#endif
         z[2] = x[4];
         z[3] = x[6];
         return z;
@@ -166,20 +177,11 @@ void ArmorTrackerNode::initEkf() {
     auto j_h = [](const Eigen::VectorXd& x)->Eigen::MatrixXd {
         Eigen::MatrixXd h(4, 9);
         double yaw = x[6], r = x[8];
-#ifdef USE_SIN
-        //   x  vx  y  vy   z yz     yaw       v_yaw     r
-        h << 1, 0,  0,  0,  0, 0,  -r*cos(yaw),   0,   -sin(yaw), // x
-             0, 0,  1,  0,  0, 0,   r*sin(yaw),   0,   -cos(yaw), // y
-             0, 0,  0,  0,  1, 0,     0      ,   0,      0,       // z
-             0, 0,  0,  0,  0, 0,     1      ,   0,      0;       // yaw
-#endif
-#ifdef USE_COS
         //   x  vx  y  vy   z yz     yaw       v_yaw     r
         h << 1, 0,  0,  0,  0, 0,  r*sin(yaw),   0,   -cos(yaw), // x
              0, 0,  1,  0,  0, 0, -r*cos(yaw),   0,   -sin(yaw), // y
              0, 0,  0,  0,  1, 0,     0      ,   0,      0,      // z
              0, 0,  0,  0,  0, 0,     1      ,   0,      0;      // yaw
-#endif
         return h;
     };
     auto update_Q = [this]()->Eigen::MatrixXd {
@@ -191,9 +193,9 @@ void ArmorTrackerNode::initEkf() {
         } else {
             return m_tracker.ekf->getQ();
         }
-        double s2qxyz = 20.0,
-               s2qyaw = 100.0,
-               s2qr   = 800.0;
+        double s2qxyz = 0.05,
+               s2qyaw = 4.0,
+               s2qr   = 80.0;
         Eigen::MatrixXd q(9, 9);
         double t       = dt,
                x       = s2qxyz,
@@ -218,7 +220,7 @@ void ArmorTrackerNode::initEkf() {
              0,      0,      0,      0,      0,      0,      0,      0,      q_r;
         return q;
     };
-    auto update_R = [this](const Eigen::MatrixXd&)->Eigen::MatrixXd {
+    auto update_R = [this](const Eigen::MatrixXd& z)->Eigen::MatrixXd {
         if (m_tracker.ekf->getR().size() == 0) {
             Eigen::DiagonalMatrix<double, 4> R;
             auto r_dio = this->get_parameter("r_diagonal").as_double_array();
@@ -227,8 +229,14 @@ void ArmorTrackerNode::initEkf() {
         } else {
             return m_tracker.ekf->getR();
         }
+        double r_xyz_factor = 4e-4,
+               r_yaw = 4e-4;
+        Eigen::DiagonalMatrix<double, 4> r;
+        double x = r_xyz_factor;
+        r.diagonal() << abs(x * z(0)), abs(x * z(1)), abs(x * z(2)), r_yaw;
+        return r;
     };
-    int p = 100;
+    int p = 1;
     Eigen::Matrix<double, 9, 9> p0;
     //  xa  vxa  ya  vya  za  vza  yaw v_yaw  r
     p0 << p,  0,   0,  0,  0,   0,   0,  0,   0, // xa

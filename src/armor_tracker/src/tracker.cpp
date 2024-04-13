@@ -7,22 +7,19 @@
  * @date 2023-11-03 19:29
  */
 
-#include <rclcpp/logging.hpp>
-#include <tf2/LinearMath/Matrix3x3.h>
-#include <tf2/LinearMath/Quaternion.h>
-#include <tf2/convert.h>
-#include <angles/angles.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
-
-#define USE_COS
-//#define USE_SIN
-
 #include <armor_tracker/tracker.h>
 
 #include <float.h>
 
+// ROS2
+#include <rclcpp/logging.hpp>
+#include <tf2/convert.h>
+#include <tf2/LinearMath/Matrix3x3.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <angles/angles.h>
+
 #include <auto_aim_interfaces/msg/armors.hpp>
-// #include <glog/logging.h>
 
 namespace armor_auto_aim {
 void TrackerStateMachine::update(bool detector_result) {
@@ -62,8 +59,8 @@ void Tracker::initTracker(const auto_aim_interfaces::msg::Armors::SharedPtr armo
     tracked_armor = armors_msg->armors[0];
     for (const auto& armor: armors_msg->armors) {
         // TODO: 是否需要改为 (z, x) 与 image_point(x, y)的距离
-        if (armor.world_pose.position.z < min_distance) {
-            min_distance = armor.world_pose.position.z;
+        if (armor.distance_to_center < min_distance) {
+            min_distance = armor.distance_to_center;
             tracked_armor = armor;
         }
     }
@@ -71,6 +68,7 @@ void Tracker::initTracker(const auto_aim_interfaces::msg::Armors::SharedPtr armo
     initEkf(tracked_armor);
     m_tracker_state_machine.initState();
     m_tracked_id = tracked_armor.number;
+    updateArmorNum(tracked_armor);
 }
 
 void Tracker::updateTracker(const auto_aim_interfaces::msg::Armors::SharedPtr armors_msg) {
@@ -119,7 +117,7 @@ void Tracker::updateTracker(const auto_aim_interfaces::msg::Armors::SharedPtr ar
         m_target_predict_state(8) = 0.4;
         ekf->setState(m_target_predict_state);
     }
-    // update
+
     m_tracker_state_machine.update(is_matched);
 }
 
@@ -129,28 +127,24 @@ void Tracker::initEkf(const auto_aim_interfaces::msg::Armor& armor) {
     double za = armor.world_pose.position.z;
     dz = m_last_yaw = 0.0;
     double yaw = orientationToYaw(armor.world_pose.orientation);
-    double r = 0.2;
+    double r = 0.28;
     m_target_predict_state = Eigen::VectorXd::Zero(9);
-#ifdef USE_SIN
-    m_target_predict_state << xa + r*sin(yaw), 0, ya + r*cos(yaw), 0, za, 0, yaw, 0, r;
-#endif
-#ifdef USE_COS
     m_target_predict_state << xa + r*cos(yaw), 0, ya + r*sin(yaw), 0, za, 0, yaw, 0, r;
-#endif
-    Eigen::Matrix<double, 9, 9> p0;
-    double p = 1000;
-    //  xa  vxa  ya  vya  za  vza  yaw v_yaw  r
-    p0 << p,  0,   0,  0,  0,   0,   0,  0,   0, // xa
-          0,  p,   0,  0,  0,   0,   0,  0,   0, // vxa
-          0,  0,   p,  0,  0,   0,   0,  0,   0, // ya
-          0,  0,   0,  p,  0,   0,   0,  0,   0, // vya
-          0,  0,   0,  0,  p,   0,   0,  0,   0, // za
-          0,  0,   0,  0,  0,   p,   0,  0,   0, // vza
-          0,  0,   0,  0,  0,   0,   p,  0,   0, // yaw
-          0,  0,   0,  0,  0,   0,   0,  p,   0, // v_yaw
-          0,  0,   0,  0,  0,   0,   0,  0,   p; // r
-    ekf->initEkf(m_target_predict_state, p0);
-    updateArmorNum(armor);
+    another_r = r;
+    ekf->setState(m_target_predict_state);
+    // Eigen::Matrix<double, 9, 9> p0;
+    // double p = 1;
+    // //  xa  vxa  ya  vya  za  vza  yaw v_yaw  r
+    // p0 << p,  0,   0,  0,  0,   0,   0,  0,   0, // xa
+    //       0,  p,   0,  0,  0,   0,   0,  0,   0, // vxa
+    //       0,  0,   p,  0,  0,   0,   0,  0,   0, // ya
+    //       0,  0,   0,  p,  0,   0,   0,  0,   0, // vya
+    //       0,  0,   0,  0,  p,   0,   0,  0,   0, // za
+    //       0,  0,   0,  0,  0,   p,   0,  0,   0, // vza
+    //       0,  0,   0,  0,  0,   0,   p,  0,   0, // yaw
+    //       0,  0,   0,  0,  0,   0,   0,  p,   0, // v_yaw
+    //       0,  0,   0,  0,  0,   0,   0,  0,   p; // r
+    // ekf->initEkf(m_target_predict_state, p0);
 }
 
 void Tracker::handleArmorJump(const auto_aim_interfaces::msg::Armor& same_id_armor) {
@@ -197,7 +191,7 @@ double Tracker::orientationToYaw(const geometry_msgs::msg::Quaternion& q) {
     double r, p, y;
     tf2::Matrix3x3(tf_q).getRPY(r, p, y);
 
-    m_last_yaw = m_last_yaw +  angles::shortest_angular_distance(m_last_yaw, y);
+    m_last_yaw = m_last_yaw + angles::shortest_angular_distance(m_last_yaw, y);
     return m_last_yaw;
 }
 

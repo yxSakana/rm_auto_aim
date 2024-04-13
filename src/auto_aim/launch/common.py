@@ -13,8 +13,9 @@ node_params = os.path.join(
 robot_description = Command([
     "xacro ", os.path.join(
         get_package_share_directory("self_state"), "urdf", "self_state.urdf.xacro"),
-    " xyz:=", "\"0.011 0 0.022\"",
-    " rpy:=", "\"0.0 0.0 0.0\""
+    # " xyz:=", "\"0.10 -0.1 0.00\"",
+    " xyz:=", "\"0.00 -0.06 0.04\"",
+    " rpy:=", "\"0.0 -0.0 -0.01\""
 ])
 
 # robot descript
@@ -45,7 +46,7 @@ armor_detector_node = ComposableNode(
         "user_intra_process_comms": True
     }])
 cam_detector_container = ComposableNodeContainer(
-    name="camera_detecotr_container",
+    name="camera_detector_container",
     namespace="",
     package="rclcpp_components",
     executable="component_container",

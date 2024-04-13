@@ -43,20 +43,6 @@ SerialDriverNode::SerialDriverNode(const rclcpp::NodeOptions& options)
     }
     m_receive_thread = std::thread(&SerialDriverNode::receiveData, this);
     m_receive_thread.detach();
-
-    // Test
-    // using namespace std::chrono_literals;
-    // m_t = std::thread([this](){
-    //     while (rclcpp::ok()) {
-    //         this->sendData(1, 2, sizeof("Hello World"), reinterpret_cast<const uint8_t*>("Hello World"));
-    //         std::this_thread::sleep_for(500ms);
-    //     }
-    // });
-    // m_t.detach();
-    // m_t_sub = this->create_subscription<custom_serial_interfaces::msg::Receive>("/custom_serial/receive", rclcpp::SensorDataQoS(),
-    //  [this](const custom_serial_interfaces::msg::Receive::ConstSharedPtr msg){
-    //     RCLCPP_INFO(this->get_logger(), "sub msg: %s", msg->data.data());
-    // });
 }
 
 void SerialDriverNode::initParamenters() {
@@ -133,7 +119,6 @@ void SerialDriverNode::receiveData() {
 
     RCLCPP_INFO(this->get_logger(), "serial receive thread is running...");
     while (rclcpp::ok()) {
-        // RCLCPP_INFO(this->get_logger(), "received data!");
         try {
             m_driver->port()->receive(buff);
         } catch (const std::exception& e) {
@@ -164,7 +149,8 @@ void SerialDriverNode::receiveData() {
                 std::memcpy(receive_msg.data.data(), data, len);
                 m_receive_pub->publish(receive_msg);
             } else {
-                RCLCPP_ERROR_STREAM(this->get_logger(), fmt::format("crc failed: {:04X}|{:04X}", crc, verify));
+                RCLCPP_ERROR_STREAM(this->get_logger(), fmt::format("id: {:02X}; fun_code: {:04X}; crc failed: {:04X}|{:04X}", 
+                func_code , id, crc, verify));
             }
             delete[] data;
         } else {

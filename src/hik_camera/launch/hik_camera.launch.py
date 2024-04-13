@@ -31,4 +31,13 @@ def generate_launch_description():
         )
     ])
 
+    return LaunchDescription([
+        Node(
+            package="hik_camera",
+            executable="hik_camera_node",
+            output="screen",
+            emulate_tty=True
+        )
+    ])
+
     return LaunchDescription([container, load_composable_nodes])

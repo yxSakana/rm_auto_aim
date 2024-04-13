@@ -9,8 +9,9 @@
 #include <functional>
 #include <memory>
 
+// ROS2
 #include <geometry_msgs/msg/transform_stamped.hpp>
-// #include <geometry_msgs/msg/
+#include <geometry_msgs/msg/point.hpp>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
@@ -31,6 +32,17 @@ ControllerIONode::ControllerIONode(const rclcpp::NodeOptions& options)
         std::bind(&ControllerIONode::trackerCallback, this, std::placeholders::_1));
     // Client
     m_serial_cli = this->create_client<SendPackage>("/custom_serial/send");
+
+    // visul
+    m_aim_marker.ns = "aim";
+    m_aim_marker.type = visualization_msgs::msg::Marker::CUBE;
+    m_aim_marker.scale.x = m_aim_marker.scale.y = m_aim_marker.scale.z = 0.1;
+    m_aim_marker.color.a = 1;
+    m_aim_marker.color.r = 1;
+    m_aim_marker.lifetime = rclcpp::Duration::from_seconds(0.1);
+    m_marker_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("/controll/aim_marker", 10);
+    // Debug publish
+    m_c_aim_pub = this->create_publisher<auto_aim_interfaces::msg::ControllerAim>("/controll/aim_point", 10);
 }
 
 void ControllerIONode::serialHandle(const Receive::SharedPtr serial_msg) {
@@ -66,16 +78,28 @@ void ControllerIONode::serialHandle(const Receive::SharedPtr serial_msg) {
                 t.header.frame_id = "odom";
                 t.child_frame_id = "gimbal_link";
                 tf2::Quaternion q(gimbal_pose_pkt.x, gimbal_pose_pkt.y, gimbal_pose_pkt.z, gimbal_pose_pkt.w);
-                // RCLCPP_INFO(this->get_logger(), "%f %f %f", gimbal_pose_pkt.r, gimbal_pose_pkt.p, gimbal_pose_pkt.yaw);
                 // tf2::Quaternion q;
                 // q.setRPY(gimbal_pose_pkt.roll, gimbal_pose_pkt.pitch, gimbal_pose_pkt.yaw);
-                // tf2::Quaternion q(gimbal_pose_pkt.w, gimbal_pose_pkt.x, gimbal_pose_pkt.y, gimbal_pose_pkt.w);
                 t.transform.rotation = tf2::toMsg(q);
-                t.transform.translation.x = 0;
-                t.transform.translation.y = 0;
-                t.transform.translation.z = 0;
                 m_gimbal_tf_broad->sendTransform(t);
+                // aim info
+                geometry_msgs::msg::Point p;
+                p.x = gimbal_pose_pkt.px;
+                p.y = gimbal_pose_pkt.py;
+                p.z = gimbal_pose_pkt.pz;
+                auto_aim_interfaces::msg::ControllerAim aim_msg;
+                aim_msg.delay = gimbal_pose_pkt.delay;
+                aim_msg.point = p;
 
+                m_marker_array.markers.clear();
+                m_aim_marker.header = t.header;
+                m_aim_marker.action = visualization_msgs::msg::Marker::ADD;
+                m_aim_marker.pose.position = p;
+                m_aim_marker.pose.orientation = t.transform.rotation;
+                m_marker_array.markers.emplace_back(m_aim_marker);
+
+                m_c_aim_pub->publish(aim_msg);
+                m_marker_pub->publish(m_marker_array);
                 break;
             }
             default: {
@@ -101,13 +125,11 @@ void ControllerIONode::trackerCallback(const Target::SharedPtr target_msg) {
     packet.omega = target_msg->v_yaw;
     packet.r1 = target_msg->r1;
     packet.r2 = target_msg->r2;
-    packet.delay = 30;
+    packet.dz = target_msg->dz;
+    packet.delay = target_msg->delay;
     packet.is_tracking = target_msg->tracking;
     packet.num = target_msg->num;
-
-    // RCLCPP_INFO(this->get_logger(), "yaw: %f; pitch: %f",
-            // std::atan2(packet.y - packet.r*cos(packet.theta), packet.x) * 180.0 / M_PI,
-            // std::atan2(packet.z - packet.r*sin(packet.theta), packet.x) * 180.0 / M_PI);
+    packet.id = target_msg->id;
 
     auto request = std::make_shared<SendPackage::Request>();
     request->func_code = mAimPacket;

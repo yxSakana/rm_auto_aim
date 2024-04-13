@@ -10,6 +10,7 @@ struct AutoAimPacket {
           theta, omega,
           r1, r2, dz;
     uint8_t num;
+    uint8_t id;
     uint8_t delay;
     uint8_t is_tracking;
 };
@@ -17,7 +18,8 @@ struct AutoAimPacket {
 struct GimbalPosePacket {
     uint64_t timestamp;
     float w, x, y, z;
-    float yaw, pitch, roll;
+    uint16_t delay;
+    float px, py, pz;
 };
 }
 #endif
