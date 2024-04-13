@@ -22,14 +22,12 @@ ament_auto_add_library(${PROJECT_NAME} SHARED
 
 find_package(Threads REQUIRED)
 find_package(Eigen3 REQUIRED)
-find_package(glog REQUIRED)
 find_package(fmt REQUIRED)
 find_package(OpenVINO REQUIRED)
 find_package(OpenCV REQUIRED)
 target_link_libraries(${PROJECT_NAME}
     Threads::Threads
     Eigen3::Eigen
-    glog::glog
     fmt::fmt
     ${OpenCV_LIBS}
     openvino::runtime

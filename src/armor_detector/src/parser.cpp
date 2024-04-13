@@ -7,11 +7,12 @@
  * @date 2023-10-27 19:57
  */
 
+#include <armor_detector/parser.h>
+
 #include <thread>
 #include <algorithm>
 
 #include <armor_detector/inference.h>
-#include <armor_detector/parser.h>
 
 namespace armor_auto_aim {
 cv::Mat scaledResize(const cv::Mat& src, Eigen::Matrix<float, 3, 3>& transformation_matrix) {

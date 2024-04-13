@@ -7,32 +7,33 @@
  * @date 2023-10-27 20:05
  */
 
+#include <armor_detector/inference.h>
+
+// ROS2
+#include <rclcpp/logging.hpp>
+// 3rdlibs
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
-#include <glog/logging.h>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
-#include <rclcpp/logger.hpp>
-#include <rclcpp/logging.hpp>
 
-#include <armor_detector/inference.h>
 #include <armor_detector/parser.h>
 
 namespace armor_auto_aim {
 Inference::Inference() {
     auto available = m_core.get_available_devices();
-    LOG(INFO) << fmt::format("Inference devices: {}", available);
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("armor_detector"), fmt::format("Inference devices: {}", available));
     m_device = (std::find(available.begin(), available.end(), "GPU") != available.end()
                ) ? "GPU" : "CPU";
-    LOG(INFO) << "Inference device: " << m_device;
+    RCLCPP_INFO(rclcpp::get_logger("armor_detector"), "Inference device: %s", m_device.c_str());
 }
 
 Inference::Inference(const std::string& model_path)
-        : m_inference_result_ptr(new float),
-          m_MODEL_PATH(model_path) {
+        : m_MODEL_PATH(model_path),
+        m_inference_result_ptr(new float) {
     auto available = m_core.get_available_devices();
-    RCLCPP_INFO(rclcpp::get_logger("armor_detecotr"),
-        fmt::format("Inference available devices: {}", available).c_str());
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("armor_detecotr"),
+        fmt::format("Inference available devices: {}", available));
     m_device = (std::find(available.begin(), available.end(), "GPU") != available.end()
                ) ? "GPU" : "CPU";
     RCLCPP_INFO(rclcpp::get_logger("armor_detecotr"), "Inference device: %s", m_device.c_str());
@@ -40,12 +41,12 @@ Inference::Inference(const std::string& model_path)
 }
 
 Inference::Inference(const std::string& model_path, const std::string& driver)
-        : m_inference_result_ptr(new float),
-          m_MODEL_PATH(model_path),
+        : m_MODEL_PATH(model_path),
+          m_inference_result_ptr(new float),
           m_device(driver) {
     auto available = m_core.get_available_devices();
-    RCLCPP_INFO(rclcpp::get_logger("armor_detecotr"),
-        fmt::format("Inference available devices: {}", available).c_str());
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("armor_detecotr"),
+        fmt::format("Inference available devices: {}", available));
     RCLCPP_INFO(rclcpp::get_logger("armor_detecotr"), "Inference device: %s", m_device.c_str());
     initModel(m_MODEL_PATH);
 }

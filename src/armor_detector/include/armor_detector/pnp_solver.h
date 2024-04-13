@@ -10,7 +10,6 @@
 #ifndef ARMOR_AUTO_AIMING_PNP_SOLVER_H
 #define ARMOR_AUTO_AIMING_PNP_SOLVER_H
 
-#include <auto_aim_interfaces/msg/detail/armor__struct.hpp>
 #include <opencv2/opencv.hpp>
 
 #include <auto_aim_interfaces/msg/armor.hpp>
