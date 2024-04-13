@@ -8,7 +8,7 @@
   <license>TODO: License declaration</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-    
+
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
   <depend>std_msgs</depend>
@@ -20,6 +20,7 @@
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
   <depend>angles</depend>
+  <depend>eigen</depend>
 
   <!-- custom msg interfaces -->
   <depend>auto_aim_interfaces</depend>

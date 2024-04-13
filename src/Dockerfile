@@ -27,4 +27,5 @@ RUN git clone https://github.com/yxSakana/rm_auto_aim --depth=1 && \
 # Build
 RUN . /opt/ros/humble/setup.sh && colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 
-
+# Cmd
+CMD ["ros2", "launch", "auto_aim", "rm_auto_aim"]

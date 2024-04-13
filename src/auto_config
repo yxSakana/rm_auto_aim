@@ -23,7 +23,7 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin 
 # Build image by Dockerfile
 git clone "https://github.com/yxSakana/"${rm_auto_aim_repository}".git" --depth=1
 cd ${rm_auto_aim_repository}/${repository_docker_path}
-docker build .
+docker build -t rm_auto_aim .
 
 # Configure program to run at system startup
 chmod +x $0/rm_auto_aim_2024
