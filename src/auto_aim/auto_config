@@ -1,4 +1,4 @@
-#!/usr/bash
+#!/usr/bin/bash
 
 docker_deb="https://desktop.docker.com/linux/main/amd64/145265/docker-desktop-4.29.0-amd64.deb?utm_source=docker&utm_medium=webreferral&utm_campaign=docs-driven-download-linux-amd64&_gl=1*fzmtvt*_ga*NTI2Nzk0NDg5LjE3MDk3Mjc4MTQ.*_ga_XJWPQMJYHQ*MTcxMjk5NzQ3MC40NC4xLjE3MTMwMDE1NDAuNDcuMC4w"
 rm_auto_aim_repository="https://github.com/yxSakana/rm_auto_aim.git"
@@ -6,8 +6,8 @@ repository_docker_path="src/auto_aim"
 
 # Install Docker
 wget -O docker-desktop.deb ${docker_deb}
-apt-get update
-apt-get install ./docker-desktop.deb
+sudo apt-get update
+sudo apt-get install ./docker-desktop.deb
 rm docker-desktop.deb
 
 # Build image by Dockerfile
@@ -17,5 +17,5 @@ docker build .
 
 # Configure program to run at system startup
 cp $0/rm_auto_aim.serivice
-systemctl daemon-reload
-systemctl enable rm_auto_aim
+sudo systemctl daemon-reload
+sudo systemctl enable rm_auto_aim
