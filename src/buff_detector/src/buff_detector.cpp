@@ -295,11 +295,12 @@ bool BuffDetectorNode::isFan(const cv::RotatedRect& r) {
     return false;
 }
 
-void BuffDetectorNode::sortFeaturePoint(const std::vector<cv::Point2f>& ps) {
-    std::sort(ps.begin(), ps.end(), [this](const cv::Point2f& a, const cv::Point2f& b)->bool {
-        return cv::norm(a - m_r_box->center) < cv::norm(b - m_r_box->center);
-    });
-}
+// std::vector<cv::Point2f> BuffDetectorNode::sortFeaturePoint(const std::vector<cv::Point2f>& ps) {
+//     std::sort(ps.begin(), ps.end(), [this](const cv::Point2f& a, const cv::Point2f& b)->bool {
+//         return cv::norm(a - m_r_box->center) < cv::norm(b - m_r_box->center);
+//     });
+//     return {};
+// }
 
 void BuffDetectorNode::reset() {
     RCLCPP_WARN(this->get_logger(), "reset");

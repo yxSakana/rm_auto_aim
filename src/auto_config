@@ -33,8 +33,18 @@ docker build -t rm_auto_aim .
 ##############################################
 # Configure program to run at system startup #
 ##############################################
-chmod +x $0/rm_auto_aim_2024
-cp rm_auto_aim_2024 ~
-sudo cp $0/rm_auto_aim.service /etc/systemd/system
+cp rm_auto_aim_2024 /home/${USER}
+chmod +x /home/${USER}/rm_auto_aim_2024
+echo -e "[Unit]
+Description="2024 RoboMaster auto aim program"
+Requires=docker.service
+After=docker.service
+
+[Service]
+ExecStart=/home/${USER}/rm_auto_aim_2024
+
+[Install]
+WantedBy=multi-user.target
+" | sudo tee /etc/systemd/system/rm_auto_aim.service
 sudo systemctl daemon-reload
 sudo systemctl enable rm_auto_aim

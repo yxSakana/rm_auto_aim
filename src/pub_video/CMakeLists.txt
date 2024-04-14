@@ -9,7 +9,7 @@ find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
 ament_auto_add_library(${PROJECT_NAME} SHARED
-DIRECTORY src)
+  DIRECTORY src)
 
 find_package(OpenCV REQUIRED)
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
@@ -27,6 +27,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_auto_package(
-  INSTALL_TO_SHARE
-    video
+  # INSTALL_TO_SHARE
+    # video
 )

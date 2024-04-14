@@ -88,7 +88,7 @@ private:
 
     void createFanBoard(const cv::RotatedRect& r_box, const FanBoard& fan_board, std::vector<FanBoard>& fans);
 
-    std::vector<cv::Point2f> sortFeaturePoint(const std::vector<cv::Point2f>& ps);
+    // std::vector<cv::Point2f> sortFeaturePoint(const std::vector<cv::Point2f>& ps);
 
     void reset();
     

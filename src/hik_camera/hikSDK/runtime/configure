@@ -1,9 +1,9 @@
 #!/usr/bin/bash
 
 if [ $(arch) == "x86_64" ]; then
-  dpkg -i ./hik_camera/hikSDK/runtime/amd64/HikSDK_Runtime.deb
+  echo "" | dpkg -i ./hik_camera/hikSDK/runtime/amd64/HikSDK_Runtime.deb
 elif [ $(arch) == "aarch64" ]; then
-  dpkg -i ./hik_camera/hikSDK/runtime/arm64/HikSDK_Runtime.deb
+  echo "" | dpkg -i ./hik_camera/hikSDK/runtime/arm64/HikSDK_Runtime.deb
 else
   echo "Unsupport architecture: $(arch)"
 fi

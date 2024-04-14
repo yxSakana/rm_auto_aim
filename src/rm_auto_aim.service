@@ -1,9 +1,0 @@
-[Unit]
-Description="2024 RoboMaster auto aim program"
-After=network.target
-
-[Service]
-ExecStart=/home/${USER}/rm_auto_aim_2024
-
-[Install]
-WantedBy=multi-user.target
