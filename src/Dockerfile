@@ -25,7 +25,7 @@ RUN cd /tmp && \
 
 # Clone repository
 RUN git clone https://github.com/yxSakana/rm_auto_aim.git . --depth=1 && \
-    cd /rm_auto_aim/src && chmod +x hik_camera/hikSDK/runtime/configure && ./hik_camera/hikSDK/runtime/config && \
+    cd /rm_auto_aim/src && chmod +x hik_camera/hikSDK/runtime/configure && ./hik_camera/hikSDK/runtime/configure && \
     cd /rm_auto_aim && apt-get update && \
     rosdep install --from-paths src --ignore-src -r -y && \
     echo ". /rm_auto_aim/install/setup.sh" >> /etc/profile.d/rm_auto_aim-path.sh
