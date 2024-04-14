@@ -20,11 +20,12 @@ RUN cd /tmp && \
     apt-get install gpg-agent -y && \
     wget https://repositories.intel.com/gpu/ubuntu/dists/jammy/lts/2350/intel-gpu-ubuntu-jammy-2350.run && \
     chmod +x intel-gpu-ubuntu-jammy-2350.run && \
-    ./intel-gpu-ubuntu-jammy-2350.run
+    ./intel-gpu-ubuntu-jammy-2350.run && \
+    cd /rm_auto_aim
 
 # Clone repository
 RUN git clone https://github.com/yxSakana/rm_auto_aim.git . --depth=1 && \
-    cd /rm_auto_aim/src && chmod +x hik_camera/hikSDK/runtime/config && ./hik_camera/hikSDK/runtime/config \ &&
+    cd /rm_auto_aim/src && chmod +x hik_camera/hikSDK/runtime/configure && ./hik_camera/hikSDK/runtime/config && \
     cd /rm_auto_aim && apt-get update && \
     rosdep install --from-paths src --ignore-src -r -y && \
     echo ". /rm_auto_aim/install/setup.sh" >> rm_auto_aim-path.sh
