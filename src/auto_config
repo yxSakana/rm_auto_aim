@@ -35,6 +35,6 @@ docker build -t rm_auto_aim .
 ##############################################
 chmod +x $0/rm_auto_aim_2024
 cp rm_auto_aim_2024 ~
-sudo cp $0/rm_auto_aim.serivice /etc/systemd/system
+sudo cp $0/rm_auto_aim.service /etc/systemd/system
 sudo systemctl daemon-reload
 sudo systemctl enable rm_auto_aim

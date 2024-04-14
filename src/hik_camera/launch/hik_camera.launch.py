@@ -1,43 +1,34 @@
+import os
+
+from ament_index_python.packages import get_package_share_directory, get_package_prefix
 from launch import LaunchDescription
-from launch_ros.actions import LoadComposableNodes, Node
-from launch_ros.descriptions import ComposableNode
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    container = Node(
-        name="image_container",
-        package="rclcpp_components",
-        executable="component_container",
-        output="both"
-    )
+    params_file = os.path.join(
+        get_package_share_directory('hik_camera'), 'config', 'camera_params.yaml')
 
-    load_composable_nodes = LoadComposableNodes(
-        target_container="image_container",
-        composable_node_descriptions=[
-            ComposableNode(
-                package="hik_camera",
-                plugin="hik_camera::HikCameraNode",
-                name="hik_camera_node"
-            )
-        ]
-    )
+    camera_info_url = 'package://hik_camera/config/camera_info.yaml'
 
     return LaunchDescription([
+        DeclareLaunchArgument(name='params_file',
+                              default_value=params_file),
+        DeclareLaunchArgument(name='camera_info_url',
+                              default_value=camera_info_url),
+        DeclareLaunchArgument(name='use_sensor_data_qos',
+                              default_value='false'),
+
         Node(
-            package="hik_camera",
-            executable="hik_camera_node",
-            output="screen",
-            emulate_tty=True
+            package='hik_camera',
+            executable='hik_camera_node',
+            output='screen',
+            emulate_tty=True,
+            parameters=[LaunchConfiguration('params_file'), {
+                'camera_info_url': LaunchConfiguration('camera_info_url'),
+                'use_sensor_data_qos': LaunchConfiguration('use_sensor_data_qos'),
+            }],
         )
     ])
-
-    return LaunchDescription([
-        Node(
-            package="hik_camera",
-            executable="hik_camera_node",
-            output="screen",
-            emulate_tty=True
-        )
-    ])
-
-    return LaunchDescription([container, load_composable_nodes])
