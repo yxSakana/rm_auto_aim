@@ -78,7 +78,9 @@ void BuffDetectorNode::detect(const sensor_msgs::msg::Image::ConstSharedPtr img_
             for (const auto& item: m_last_fans) {
                 drawRotatedRect(img, item.region, 3, cv::Scalar(255, 0, 200));
                 cv::putText(img, std::to_string(item.id), item.region.center+cv::Point2f(40, 10), 0, 0.8, cv::Scalar(0, 255, 255));
-                cv::putText(img, armor_auto_aim::to_string(item.state), item.region.center+cv::Point2f(40, 30), 0, 0.5, cv::Scalar(0, 255, 255));
+                cv::putText(img, armor_auto_aim::to_string(item.state),
+                    item.region.center+cv::Point2f(40, 30), 0, 0.5,
+                    item.state == FanState::Target? cv::Scalar(255, 0, 0): cv::Scalar(0, 255, 255));
             }
         }
     }
@@ -291,6 +293,12 @@ bool BuffDetectorNode::isFan(const cv::RotatedRect& r) {
             }
         }
     return false;
+}
+
+void BuffDetectorNode::sortFeaturePoint(const std::vector<cv::Point2f>& ps) {
+    std::sort(ps.begin(), ps.end(), [this](const cv::Point2f& a, const cv::Point2f& b)->bool {
+        return cv::norm(a - m_r_box->center) < cv::norm(b - m_r_box->center);
+    });
 }
 
 void BuffDetectorNode::reset() {

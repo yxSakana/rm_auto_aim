@@ -88,6 +88,8 @@ private:
 
     void createFanBoard(const cv::RotatedRect& r_box, const FanBoard& fan_board, std::vector<FanBoard>& fans);
 
+    std::vector<cv::Point2f> sortFeaturePoint(const std::vector<cv::Point2f>& ps);
+
     void reset();
     
     void drawRotatedRect(cv::Mat& src, const cv::RotatedRect& r, int thickness=2, const cv::Scalar& color=cv::Scalar(0, 0, 255));

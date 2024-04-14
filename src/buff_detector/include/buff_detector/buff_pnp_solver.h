@@ -15,7 +15,7 @@ public:
 
     bool solver(const FanBoard& fan, cv::Mat& rvec, cv::Mat& tvec);
 private:
-    // Unit: mM
+    // Unit: mm
     static constexpr float SMALL_ARMOR_WIDTH = 135;
     static constexpr float SMALL_ARMOR_HEIGHT = 55;
     static constexpr float LARGE_ARMOR_WIDTH = 225;

@@ -1,4 +1,4 @@
-FROM ros:humble-ros-base
+FROM osrf/ros:humble-desktop
 
 # Create word directory
 RUN mkdir -p /rm_auto_aim
@@ -18,11 +18,12 @@ RUN cd /tmp && \
     wget https://repositories.intel.com/gpu/ubuntu/dists/jammy/lts/2350/intel-gpu-ubuntu-jammy-2350.run && \
     chmod +x intel-gpu-ubuntu-jammy-2350.run && \
     ./intel-gpu-ubuntu-jammy-2350.run
-    
+
 # Clone repository
-RUN git clone https://github.com/yxSakana/rm_auto_aim --depth=1 && \
+RUN git clone https://github.com/yxSakana/rm_auto_aim.git --depth=1 && \
     apt-get update && \
-    rosdep install --from-paths src --ignore-src -r -y
+    rosdep install --from-paths src --ignore-src -r -y && \
+    echo "export /rm_auto_aim/install/setup.sh" >> /root/.profile
 
 # Build
 RUN . /opt/ros/humble/setup.sh && colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
