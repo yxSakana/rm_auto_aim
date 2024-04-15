@@ -27,12 +27,13 @@ RUN cd /tmp && \
 RUN git clone https://github.com/yxSakana/rm_auto_aim.git . --depth=1 && \
     cd /rm_auto_aim/src && chmod +x hik_camera/hikSDK/runtime/configure && ./hik_camera/hikSDK/runtime/configure && \
     cd /rm_auto_aim && apt-get update && \
-    rosdep install --from-paths src --ignore-src -r -y && \
-    echo ". /rm_auto_aim/install/setup.sh" >> /etc/profile.d/rm_auto_aim-path.sh
+    rosdep install --from-paths src --ignore-src -r -y
 
 # Build
 RUN . /etc/profile.d/rm_auto_aim-path.sh && \
-    colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
+    colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release && \
+    echo ". /rm_auto_aim/install/setup.sh" >> /etc/profile.d/rm_auto_aim-path.sh && \
+    . /etc/profile.d/rm_auto_aim-path.sh
 
 # Cmd
 CMD ["ros2", "launch", "auto_aim", "rm_auto_aim"]
