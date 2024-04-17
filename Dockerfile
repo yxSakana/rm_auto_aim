@@ -1,4 +1,4 @@
-FROM armor_auto
+FROM armor_auto:v2
 # WORKDIR /app
 
 # COPY BUILD /root

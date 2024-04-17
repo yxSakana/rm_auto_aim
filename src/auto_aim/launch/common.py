@@ -14,8 +14,8 @@ robot_description = Command([
     "xacro ", os.path.join(
         get_package_share_directory("self_state"), "urdf", "self_state.urdf.xacro"),
     # " xyz:=", "\"0.10 -0.1 0.00\"",
-    " xyz:=", "\"0.00 -0.06 0.04\"",
-    " rpy:=", "\"0.0 -0.0 -0.01\""
+    " xyz:=", "\"0.00 +0.13 +0.05\"",
+    " rpy:=", "\"0.0 -0.0 -0.0\""
 ])
 
 # robot descript

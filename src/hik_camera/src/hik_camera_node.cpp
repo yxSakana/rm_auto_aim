@@ -149,7 +149,7 @@ private:
     MV_CC_GetFloatValue(camera_handle_, "ExposureTime", &f_value);
     param_desc.integer_range[0].from_value = f_value.fMin;
     param_desc.integer_range[0].to_value = f_value.fMax;
-    double exposure_time = this->declare_parameter("exposure_time", 5000, param_desc);
+    double exposure_time = this->declare_parameter("exposure_time", 5000.0, param_desc);
     MV_CC_SetFloatValue(camera_handle_, "ExposureTime", exposure_time);
     RCLCPP_INFO(this->get_logger(), "Exposure time: %f", exposure_time);
 

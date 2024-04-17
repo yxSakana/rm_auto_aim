@@ -21,6 +21,6 @@
 /armor_tracker_node:
   ros__parameters:
     #              x     vx     y   vy     z      vz     yaw   vyaw    r
-    q_diagonal: [0.005, 0.01, 0.02, 0.01, 0.08, 0.005, 0.001, 0.001, 0.00001] # x vx y vy z vz yaw v_yaw r
+    q_diagonal: [0.005, 0.01, 0.002, 0.001, 0.08, 0.005, 0.001, 0.001, 0.00001] # x vx y vy z vz yaw v_yaw r
     r_diagonal: [0.3, 0.25, 0.16, 0.04]  # x y z yaw
     odom_frame: "odom"
