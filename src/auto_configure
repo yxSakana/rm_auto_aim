@@ -41,7 +41,7 @@ Requires=docker.service
 After=docker.service
 
 [Service]
-ExecStart=/home/${USER}/rm_auto_aim_2024
+ExecStart=docker restart rm_auto_aim
 
 [Install]
 WantedBy=multi-user.target

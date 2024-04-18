@@ -43,7 +43,7 @@ RUN cd /rm_auto_aim && git clone https://github.com/yxSakana/rm_auto_aim.git . -
 
 # Build
 RUN . /opt/ros/humble/setup.sh && . /usr/local/setupvars.sh && \
-    colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release -- && \
+    colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release && \
     echo "#!/bin/bash" > /ros_entrypoint.sh && \
     echo "source \"/opt/ros/${ROS_DISTRO}/setup.sh\" --" >> /ros_entrypoint.sh && \
     echo "source \"/usr/local/setupvars.sh\"" >> /ros_entrypoint.sh && \

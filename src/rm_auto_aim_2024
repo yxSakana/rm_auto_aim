@@ -1,9 +1,0 @@
-#!/bin/bash
-
-docker run \
-    --privileged \
-    --device=/dev/dri:/dev/dri \
-    --device=/dev/ttyACM0 \
-    --volume=/tmp/.X11-unix:/tmp/.X11-unix \
-    --volume=/dev/ttyACM0:/dev/ttyACM0 \
-    rm_auto_aim
