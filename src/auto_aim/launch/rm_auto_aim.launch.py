@@ -10,13 +10,13 @@ from launch_ros.descriptions import ComposableNode
 sys.path.append(os.path.join(get_package_share_directory('auto_aim'), 'launch'))
 
 from common import robot_state_publisher_node, \
-        cam_detector_container, armor_tracker_node, \
-        serial_container
+        cam_detector_container, delay_armor_tracker_node, \
+        delay_serial_node
 
 def generate_launch_description():
     return LaunchDescription([
         robot_state_publisher_node,
         cam_detector_container,
-        armor_tracker_node,
-        serial_container,
+        delay_armor_tracker_node,
+        delay_serial_node,
     ])

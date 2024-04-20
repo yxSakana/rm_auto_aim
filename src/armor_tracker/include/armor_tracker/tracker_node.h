@@ -33,9 +33,6 @@ private:
     std::shared_ptr<tf2_ros::MessageFilter<auto_aim_interfaces::msg::Armors>> m_tf_filter;
     // Publisher
     rclcpp::Publisher<auto_aim_interfaces::msg::Target>::SharedPtr m_target_pub;
-    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr m_yaw_pub;
-    rclcpp::Publisher<geometry_msgs::msg::Pose>::SharedPtr m_odom_pose_pub;
-    rclcpp::Publisher<auto_aim_interfaces::msg::DebugAngle>::SharedPtr m_debug_angle;
     // Subscription
     message_filters::Subscriber<auto_aim_interfaces::msg::Armors> m_armors_sub;
     // Visualization marker
@@ -44,6 +41,10 @@ private:
     visualization_msgs::msg::Marker m_linear_v_marker;
     visualization_msgs::msg::Marker m_omega_marker;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr m_marker_pub;
+    // Debug publisher
+    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr m_yaw_pub;
+    rclcpp::Publisher<geometry_msgs::msg::Pose>::SharedPtr m_odom_pose_pub;
+    rclcpp::Publisher<auto_aim_interfaces::msg::DebugAngle>::SharedPtr m_debug_angle;
 
     void initEkf();
     

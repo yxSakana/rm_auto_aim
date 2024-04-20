@@ -29,8 +29,6 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions& options)
     // Publisher
     m_armors_pub = this->create_publisher<
         auto_aim_interfaces::msg::Armors>("/armor_detector/armors", rclcpp::SensorDataQoS());
-    // Debug publisher
-    m_result_img_pub = image_transport::create_publisher(this, "/armor_detector/result_img");
     // Subscription
     m_cam_info_sub = this->create_subscription<
         sensor_msgs::msg::CameraInfo>("/camera_info", rclcpp::SensorDataQoS(),
@@ -38,15 +36,17 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions& options)
     m_img_sub = this->create_subscription<sensor_msgs::msg::Image>(
         "/image_raw", rclcpp::SensorDataQoS(),
         std::bind(&ArmorDetectorNode::subImageCallback, this, std::placeholders::_1));
+    // Debug publisher
+    m_result_img_pub = image_transport::create_publisher(this, "/armor_detector/result_img");
 }
 
 void ArmorDetectorNode::declareParams() {
     auto model_path = this->declare_parameter("model_path", "opt-0527-001.onnx");
     model_path = ament_index_cpp::get_package_share_directory("armor_detector") + "/model/" + model_path;
     auto inference_driver = this->declare_parameter("inference_driver", "AUTO");
-    auto a = this->declare_parameter("detect_color", "BLUE");
+    auto c = this->declare_parameter("detect_color", "BLUE");
     RCLCPP_INFO(this->get_logger(), "model path_: %s", model_path.c_str());
-    RCLCPP_INFO(this->get_logger(), "target color: %s", a.c_str());
+    RCLCPP_INFO(this->get_logger(), "target color: %s", c.c_str());
     if (inference_driver == "AUTO")
         m_inference = std::make_unique<Inference>(model_path);
     else
@@ -85,7 +85,7 @@ void ArmorDetectorNode::subImageCallback(const sensor_msgs::msg::Image::ConstSha
             armor.color = result.color? "BLUE": "RED";
             // armor apex
             std::vector<cv::Point2f> img_points(result.armor_apex, result.armor_apex + 4);
-            // if (std::)
+            // ratio
             cv::RotatedRect rrect = cv::minAreaRect(img_points);
             auto ratio = std::max(rrect.size.height, rrect.size.width) /
                                 std::min(rrect.size.height, rrect.size.width);
@@ -110,17 +110,17 @@ void ArmorDetectorNode::subImageCallback(const sensor_msgs::msg::Image::ConstSha
             armor.pose.position.y = tvec.at<double>(1);
             armor.pose.position.z = tvec.at<double>(2);
             orientationFromRvec(rvec, armor.pose.orientation);
+            tf2::Quaternion tfq;
+            tf2::fromMsg(armor.pose.orientation, tfq);
+            double r, p, y;
+            tf2::Matrix3x3(tfq).getRPY(r, p, y);
+            RCLCPP_INFO(this->get_logger(), "yaw: %f", y * 180.0 / M_PI);
             m_armors_msg.armors.emplace_back(armor);
-
-            // Marker
-            // m_armor_marker.id++;
-            // m_armor_marker.pose = armor.pose;
-            // m_marker_array.markers.emplace_back(m_armor_marker);
         }
     }
-    // Publish armors && debug img
+    // Publish armors
     m_armors_pub->publish(m_armors_msg);
-    // Publish Marker && debug img
+    // Publish debug img
     m_result_img_pub.publish(cv_bridge::CvImage(img_msg->header, "rgb8", img).toImageMsg());
 }
 

@@ -8,9 +8,9 @@
     "runArgs": [
         "--privileged",
         "--device=/dev/dri:/dev/dri",
+        "--device=/dev/ttyACM0",
         "--volume=/tmp/.X11-unix:/tmp/.X11-unix",
         "--volume=/dev/bus/usb:/dev/bus/usb",
-        "--device=/dev/ttyACM0",
         "--volume=/dev/ttyACM0:/dev/ttyACM0",
         "--name=rm_armor_auto_aim"
     ],

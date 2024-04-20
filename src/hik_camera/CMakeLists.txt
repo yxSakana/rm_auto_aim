@@ -4,6 +4,7 @@ project(hik_camera)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_options(-Wall -Wextra -Wpedantic)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
@@ -11,17 +12,17 @@ ament_auto_find_build_dependencies()
 ament_auto_add_library(${PROJECT_NAME} SHARED
   src/hik_camera_node.cpp)
 
-target_include_directories(${PROJECT_NAME} PUBLIC hikSDK/include)
+target_include_directories(${PROJECT_NAME} PUBLIC hik_sdk/include)
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
-  target_link_directories(${PROJECT_NAME} PUBLIC hikSDK/lib/amd64)
+  target_link_directories(${PROJECT_NAME} PUBLIC hik_sdk/lib/amd64)
   install(
-    DIRECTORY hikSDK/lib/amd64
+    DIRECTORY hik_sdk/lib/amd64
     DESTINATION lib
   )
 elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
-  target_link_directories(${PROJECT_NAME} PUBLIC hikSDK/lib/arm64)
+  target_link_directories(${PROJECT_NAME} PUBLIC hik_sdk/lib/aarch64)
   install(
-    DIRECTORY hikSDK/lib/arm64
+    DIRECTORY hik_sdk/lib/aarch64
     DESTINATION lib
   )
 else()

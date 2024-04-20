@@ -1,13 +1,13 @@
 import os
 
 from ament_index_python.packages import get_package_share_directory
-from launch.actions import Shutdown
+from launch.actions import Shutdown, TimerAction
 from launch.substitutions import Command
 from launch_ros.actions import Node, ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
 
 node_params = os.path.join(
-    get_package_share_directory("auto_aim"), "config", "node_params.yaml"
+    get_package_share_directory("auto_aim"), "config", "infantry_CS004.yaml"
 )
 
 robot_description = Command([
@@ -66,6 +66,10 @@ armor_tracker_node = Node(
     parameters=[node_params],
     output="both",
     on_exit=Shutdown())
+delay_armor_tracker_node = TimerAction(
+    period=1.5,
+    actions=[armor_tracker_node]
+)
 # serial
 serial_node = ComposableNode(
     package="custom_serial_driver",
@@ -95,4 +99,8 @@ serial_container = ComposableNodeContainer(
     output="both",
     emulate_tty=True,
     on_exit=Shutdown()  
+)
+delay_serial_node = TimerAction(
+    period=1.5,
+    actions=[serial_container]
 )
