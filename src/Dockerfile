@@ -5,13 +5,11 @@ ARG HTTPS_PROXY="127.0.0.1:7890"
 ENV SHELL=/bin/bash
 SHELL ["/bin/bash", "-c"]
 
-# Create word directory
-RUN mkdir -p /rm_auto_aim
 WORKDIR /rm_auto_aim
 
 # init
 RUN apt-get update && \
-    apt-get install vim wget curl git cmake ninja-build kmod -y
+    apt-get instal wget curl git cmake ninja-build kmod ros-humble-foxglove-bridge -y
 
 # apt-get install gpg-agent -y && \
 # wget https://repositories.intel.com/gpu/ubuntu/dists/jammy/lts/2350/intel-gpu-ubuntu-jammy-2350.run && \
@@ -39,12 +37,10 @@ RUN mkdir /tmp/gpu_deps && cd /tmp/gpu_deps && \
 
 # Clone repository
 RUN cd /rm_auto_aim && git clone https://github.com/yxSakana/rm_auto_aim.git . --depth=1 && \
-    apt-get update && rosdep install --from-paths src --ignore-src -r -y
-
-# Build
-RUN . /opt/ros/humble/setup.sh && . /usr/local/setupvars.sh && \
-    colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release && \
+    apt-get update && rosdep install --from-paths src --ignore-src -r -y && \
+    . /opt/ros/humble/setup.sh && . /usr/local/setupvars.sh && \
+    colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo && \
     sed --in-place --expression \
         '$isource "/rm_auto_aim/install/setup.bash"' \
-        /ros_entrypoint.sh
-
+        /ros_entrypoint.sh && \
+    rm -Rf /var/lib/apt/lists/*
