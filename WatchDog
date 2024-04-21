@@ -20,6 +20,7 @@ elif [[ $(arch) == "aarch64" ]]; then
 fi
 source "/opt/ros/$ROS_DISTRO/setup.bash"
 source "${SCRIPT_DIR}/install/setup.bash"
+source "/usr/local/setupvars.sh"
 
 # start foxglove
 if [[ $2 == "Debug" ]]; then

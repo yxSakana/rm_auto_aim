@@ -2,7 +2,7 @@
 
 ```shell
 # pull
-docker pull osrf/ros:humble-desktop
+docker pull ros:humble-ros-base
 
 # build
 docker build \
@@ -21,7 +21,7 @@ docker run \
     --volume=/tmp/.X11-unix:/tmp/.X11-unix: \
     --name rm_auto_aim \
     rm_auto_aim \
-    ros2 launch auto_aim rm_auto_aim.launch.py
+    /rm_auto_aim/src/WatchDog infantry_CS004
 ```
 
 ## Configure program to run at system startup

@@ -1,7 +1,7 @@
 FROM ros:humble-ros-base
 
-ARG https_proxy="127.0.0.1:7890"
-ARG HTTPS_PROXY="127.0.0.1:7890"
+ARG https_proxy
+ARG HTTPS_PROXY
 ENV SHELL=/bin/bash
 SHELL ["/bin/bash", "-c"]
 
@@ -24,7 +24,7 @@ RUN cd /tmp && \
     git submodule update --init --recursive && \
     chmod +x install_build_dependencies.sh && ./install_build_dependencies.sh && \
     cmake -B build -G "Ninja" && cmake --build build -j$(nproc) && cmake --build build --target install -j$(nproc) && \
-    rm -Rf /tmp/openvino && cd /rm_auto_aim
+    rm -Rf /tmp/openvino
 
 # From GPU
 RUN mkdir /tmp/gpu_deps && cd /tmp/gpu_deps && \
@@ -36,7 +36,7 @@ RUN mkdir /tmp/gpu_deps && cd /tmp/gpu_deps && \
     dpkg -i ./*.deb && rm -Rf /tmp/gpu_deps
 
 # Clone repository
-RUN cd /rm_auto_aim && git clone https://github.com/yxSakana/rm_auto_aim.git . --depth=1 && \
+RUN cd /rm_auto_aim && git clone https://github.com/yxSakana/rm_auto_aim.git ./src --depth=1 && \
     apt-get update && rosdep install --from-paths src --ignore-src -r -y && \
     . /opt/ros/humble/setup.sh && . /usr/local/setupvars.sh && \
     colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo && \
