@@ -1,22 +1,30 @@
 import os
+import yaml
 
 from ament_index_python.packages import get_package_share_directory
-from launch.actions import Shutdown, TimerAction
-from launch.substitutions import Command
+from launch.actions import Shutdown, TimerAction, DeclareLaunchArgument
+from launch.substitutions import Command, LaunchConfiguration, EnvironmentVariable
 from launch_ros.actions import Node, ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
 
+print(os.path.join(
+        get_package_share_directory("auto_aim"), "config", "robot_type"))
+with open(os.path.join(
+        get_package_share_directory("auto_aim"), "config", "robot_type"), "r") as f:
+    robot_type = f.read().strip()
+print(robot_type)
+
 node_params = os.path.join(
-    get_package_share_directory("auto_aim"), "config", "infantry_CS004.yaml"
-)
+    get_package_share_directory("auto_aim"), "config", robot_type + ".yaml")
+
+camera_offset = yaml.safe_load(open(os.path.join(
+    get_package_share_directory("auto_aim"), "config", "camera_offset.yaml")))
 
 robot_description = Command([
     "xacro ", os.path.join(
         get_package_share_directory("self_state"), "urdf", "self_state.urdf.xacro"),
-    # " xyz:=", "\"0.10 -0.1 0.00\"",
-    " xyz:=", "\"0.00 +0.13 +0.05\"",
-    " rpy:=", "\"0.0 -0.0 -0.0\""
-])
+    " xyz:=", camera_offset[robot_type]["xyz"],
+    " rpy:=", camera_offset[robot_type]["rpy"]])
 
 # robot descript
 robot_state_publisher_node = Node(

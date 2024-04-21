@@ -1,0 +1,41 @@
+#!/bin/bash
+
+abs_path() {
+    script_path=$(eval echo $1)
+    directory=$(dirname "${script_path}")
+    pwd -P
+}
+
+SCRIPT_DIR="$(abs_path "${BASH_SOURCE[0]}")" &>/dev/null
+if [[ SCRIPT_DIR == "" ]]; then
+    echo "script dir is emtry!"
+    exit
+fi
+
+# load environment variable
+if [[ $(arch) == "x86_64" ]]; then
+    export LD_LIBRARY_PATH="${SCRIPT_DIR}/src/hik_camera/hik_sdk/lib/amd64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+elif [[ $(arch) == "aarch64" ]]; then
+    export LD_LIBRARY_PATH="${SCRIPT_DIR}/src/hik_camera/hik_sdk/lib/aarch64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+fi
+source "/opt/ros/$ROS_DISTRO/setup.bash"
+source "${SCRIPT_DIR}/install/setup.bash"
+
+# start foxglove
+if [[ $2 == "Debug" ]]; then
+    ros2 launch foxglove_bridge foxglove_bridge_launch.xml &
+fi
+
+# pull github repository
+if [[ $(ping -c github.com &>/dev/null) ]]; then
+    cd ${SCRIPT_DIR}/..
+    git pull &>/dev/null
+fi
+
+# write robot_type
+echo $1 > "${SCRIPT_DIR}/src/auto_aim/config/robot_type"
+# build
+colcon build --symlink-install &>/dev/null
+# run
+ros2 launch auto_aim rm_auto_aim.launch.py
+

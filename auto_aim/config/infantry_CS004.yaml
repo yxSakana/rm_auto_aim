@@ -2,7 +2,7 @@
   ros__parameters:
     camera_info_url: package://auto_aim/config/CS-004.yaml
     exposure_time: 3000.0
-    gain: 20.77
+    gain: 10.77
 
 /custom_serial_node:
   ros__parameters:

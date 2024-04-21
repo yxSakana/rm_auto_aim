@@ -10,9 +10,9 @@ find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
 ament_auto_add_library(${PROJECT_NAME} SHARED
-  src/hik_camera_node.cpp)
+  DIRECTORY src)
 
-target_include_directories(${PROJECT_NAME} PUBLIC hik_sdk/include)
+target_include_directories(${PROJECT_NAME} PUBLIC hik_sdk/include include)
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
   target_link_directories(${PROJECT_NAME} PUBLIC hik_sdk/lib/amd64)
   install(
