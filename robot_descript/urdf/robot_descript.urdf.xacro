@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<robot xmlns:xacro="https://ros.org/wiki/xacro" name="self_state">
+<robot xmlns:xacro="https://ros.org/wiki/xacro" name="robot_descript">
     <xacro:arg name="xyz" default="0.0 0.0 0.0" />
     <xacro:arg name="rpy" default="0 0 0" />
 

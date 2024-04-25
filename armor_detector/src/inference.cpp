@@ -45,6 +45,10 @@ Inference::Inference(const std::string& model_path, const std::string& driver)
           m_inference_result_ptr(new float),
           m_device(driver) {
     auto available = m_core.get_available_devices();
+    m_device = (std::find(available.begin(), available.end(), driver) != available.end()
+               ) ? driver : "CPU";
+    RCLCPP_WARN_EXPRESSION(rclcpp::get_logger("armor_detector"),
+        m_device != driver, "%s is not available, use CPU", driver.c_str());
     RCLCPP_INFO_STREAM(rclcpp::get_logger("armor_detecotr"),
         fmt::format("Inference available devices: {}", available));
     RCLCPP_INFO(rclcpp::get_logger("armor_detecotr"), "Inference device: %s", m_device.c_str());

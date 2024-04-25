@@ -20,6 +20,7 @@ class ControllerIONode: public rclcpp::Node {
     static constexpr int mAimPacket = 1;
     // Controller
     static constexpr int mControllerId = 1;
+    static constexpr int mSlaveControllerId = 2;
     static constexpr int mNeedUpdateTimestamp = 0;
     static constexpr int mGimbalPose = 1;
     static constexpr int mControllerAim = 2;

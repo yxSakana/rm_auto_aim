@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<robot xmlns:xacro="https://ros.org/wiki/xacro" name="robot_descript">
+    <xacro:arg name="odom2gimbal_xyz" default="0.0 0.0 0.0" />
+    <xacro:arg name="odom2gimbal_rpy" default="0.0 0.0 0.0" />
+    <xacro:arg name="odom2slave_gimbal_xyz" default="0.0 0.0 0.0" />
+    <xacro:arg name="odom2slave_gimbal_rpy" default="0.0 0.0 0.0" />
+    <xacro:arg name="gimbal2camera_xyz" default="0.0 0.0 0.0" />
+    <xacro:arg name="gimbal2camera_rpy" default="0.0 0.0 0.0" />
+    <xacro:arg name="gimbal2slave_camera_xyz" default="0.0 0.0 0.0" />
+    <xacro:arg name="gimbal2slave_camera_rpy" default="0.0 0.0 0.0" />
+
+    <!-- odom  -->
+    <link name="odom" />
+    <link name="gimbal_link" />
+    <link name="slave_gimbal_link" />
+
+    <joint name="gimbal_joint" type="floating">
+        <origin xyz="$(arg odom2gimbal_xyz)" rpy="$(arg odom2gimbal_rpy)"/>
+        <parent link="odom" />
+        <child link="gimbal_link" />
+    </joint>
+    
+    <joint name="gimbal_slave_joint" type="floating">
+        <origin xyz="$(arg odom2slave_gimbal_xyz)" rpy="$(arg odom2slave_gimbal_rpy)"/>
+        <parent link="odom" />
+        <child link="slave_gimbal_link" />
+    </joint>
+
+    <!-- camera  -->
+    <link name="camera_link" />
+    <link name="slave_camera_link" />
+
+    <joint name="camera_joint" type="fixed">
+        <origin xyz="$(arg gimbal2camera_xyz)" rpy="$(arg gimbal2camera_rpy)" />
+        <parent link="gimbal_link" />
+        <child link="camera_link" />
+        <axis xyz="0 0 0" />
+    </joint>
+    
+    <joint name="slave_camera_joint" type="fixed">
+        <origin xyz="$(arg gimbal2slave_camera_xyz)" rpy="$(arg gimbal2slave_camera_rpy)" />
+        <parent link="slave_gimbal_link" />
+        <child link="slave_camera_link" />
+        <axis xyz="0 0 0" />
+    </joint>
+    <!--  -->
+    <link name="camera_optical_frame" />
+
+    <joint name="camera_optical_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}" />
+        <parent link="camera_link" />
+        <child link="camera_optical_frame" />
+    </joint>
+
+    <joint name="slave_camera_optical_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}" />
+        <parent link="slave_camera_link" />
+        <child link="slave_camera_optical_frame" />
+    </joint>
+</robot>

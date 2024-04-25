@@ -31,9 +31,10 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions& options)
     // Publisher
     m_target_pub = this->create_publisher<
         auto_aim_interfaces::msg::Target>("/armor_tracker/target", rclcpp::SensorDataQoS());
-    m_odom_pose_pub = this->create_publisher<geometry_msgs::msg::Pose>("/armor_tracker/debug/odom_pose", 10);
-    m_yaw_pub = this->create_publisher<std_msgs::msg::Float64>("/armor_tracker/message_yaw", 10);
-    m_debug_angle = this->create_publisher<auto_aim_interfaces::msg::DebugAngle>("/debug/angle", 10);
+    // Debug Publisher
+    // m_odom_pose_pub = this->create_publisher<geometry_msgs::msg::Pose>("/armor_tracker/debug/odom_pose", 10);
+    // m_yaw_pub = this->create_publisher<std_msgs::msg::Float64>("/armor_tracker/message_yaw", 10);
+    // m_debug_angle = this->create_publisher<auto_aim_interfaces::msg::DebugAngle>("/debug/angle", 10);
     // Marker
     // car center
     m_center_marker.ns = "center";
@@ -123,15 +124,14 @@ void ArmorTrackerNode::subArmorsCallback(const auto_aim_interfaces::msg::Armors:
             std_msgs::msg::Float64 yaw_msg;
             yaw_msg.data = y;
             // Debug angle
-            auto_aim_interfaces::msg::DebugAngle debug_angle;
-            debug_angle.header = armos_msg->header;
-            auto tp = target_msg.position;
-            debug_angle.yaw = std::atan2(tp.y, tp.x) * 180.0 / M_PI;
-            debug_angle.pitch = std::atan2(std::sqrt(tp.y*tp.y + tp.x*tp.x), tp.x) * 180.0 / M_PI;
-
-            m_odom_pose_pub->publish(m_tracker.tracked_armor.world_pose);
-            m_yaw_pub->publish(yaw_msg);
-            m_debug_angle->publish(debug_angle);
+            // auto_aim_interfaces::msg::DebugAngle debug_angle;
+            // debug_angle.header = armos_msg->header;
+            // auto tp = target_msg.position;
+            // debug_angle.yaw = std::atan2(tp.y, tp.x) * 180.0 / M_PI;
+            // debug_angle.pitch = std::atan2(std::sqrt(tp.y*tp.y + tp.x*tp.x), tp.x) * 180.0 / M_PI;
+            // m_odom_pose_pub->publish(m_tracker.tracked_armor.world_pose);
+            // m_yaw_pub->publish(yaw_msg);
+            // m_debug_angle->publish(debug_angle);
         }
     }
 

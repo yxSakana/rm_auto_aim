@@ -22,7 +22,6 @@ namespace armor_auto_aim {
 class ArmorDetectorNode: public rclcpp::Node {
 public:
     explicit ArmorDetectorNode(const rclcpp::NodeOptions& options);
-
 private:
     std::unique_ptr<Inference> m_inference;
     std::unique_ptr<PnPSolver> m_pnp_solver;

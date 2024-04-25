@@ -48,7 +48,7 @@ ControllerIONode::ControllerIONode(const rclcpp::NodeOptions& options)
 void ControllerIONode::serialHandle(const Receive::SharedPtr serial_msg) {
     RCLCPP_DEBUG(this->get_logger(), "fun: %d; id: %d; len: %d; data: %s;",
         serial_msg->func_code, serial_msg->id, serial_msg->len, serial_msg->data.data());
-    if (serial_msg->id == mControllerId) {
+    if (serial_msg->id == mControllerId || serial_msg->id == mSlaveControllerId) {
         switch (serial_msg->func_code) {
             case mNeedUpdateTimestamp: {
                 uint64_t timestamp = std::chrono::duration_cast<
@@ -76,7 +76,7 @@ void ControllerIONode::serialHandle(const Receive::SharedPtr serial_msg) {
                 geometry_msgs::msg::TransformStamped t;
                 t.header.stamp = this->now();
                 t.header.frame_id = "odom";
-                t.child_frame_id = "gimbal_link";
+                t.child_frame_id = serial_msg->id == mControllerId? "gimbal_link": "slave_gimbal_link";
                 tf2::Quaternion q(gimbal_pose_pkt.x, gimbal_pose_pkt.y, gimbal_pose_pkt.z, gimbal_pose_pkt.w);
                 // tf2::Quaternion q;
                 // q.setRPY(gimbal_pose_pkt.roll, gimbal_pose_pkt.pitch, gimbal_pose_pkt.yaw);

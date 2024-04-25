@@ -35,7 +35,7 @@ target_link_libraries(${PROJECT_NAME}
 
 rclcpp_components_register_node(${PROJECT_NAME}
   PLUGIN "armor_auto_aim::ArmorDetectorNode"
-  EXECUTABLE armor_detector_node
+  EXECUTABLE ${PROJECT_NAME}_node
 )
 
 if(BUILD_TESTING)

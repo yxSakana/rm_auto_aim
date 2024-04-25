@@ -1,4 +1,3 @@
-
 #include <buff_detector/buff_detector.h>
 
 #include <cv_bridge/cv_bridge.h>

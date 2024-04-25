@@ -6,19 +6,31 @@
 namespace hik_camera {
 HikCameraNode::HikCameraNode(const rclcpp::NodeOptions& options)
     : Node("hik_camera", options),
-        m_hik_driver(0) {
+      m_hik_driver(this->declare_parameter("camera_index", 0)) {
     m_camera_pub = image_transport::create_camera_publisher(
         this, "image_raw", rmw_qos_profile_default/*rmw_qos_profile_sensor_data*/);
     // Paraments
     std::string camera_name = this->declare_parameter("camera_name", "narrow_stereo");
     std::string camera_info_url = this->declare_parameter(
         "camera_info_url", "package://hik_camera/config/camera_info.yaml");
+    this->declare_parameter("camera_frame", "camera_optical_frame");
     this->declare_parameter<float>("exposure_time", 4000.0);
     this->declare_parameter<float>("gain", 15.0);
-
+    // Service
+    m_enable_srv = this->create_service<std_srvs::srv::SetBool>("hik_camera/enable", [this](
+        const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+        std::shared_ptr<std_srvs::srv::SetBool::Response> response
+    )->void {
+        m_enable = request->data;
+        response->success = true;
+        const char* mess = request->data? "disenable hik camera": "enable hik camera";
+        response->message = mess;
+        RCLCPP_INFO(this->get_logger(), "%s(%ld)", mess, this->get_parameter("camera_index").as_int());
+    });
+    // Camera manager
     m_camera_info_manager = std::make_unique<
         camera_info_manager::CameraInfoManager>(this, camera_name);
-
+    // Camera info manager
     if (m_camera_info_manager->validateURL(camera_info_url)) {
         m_camera_info_manager->loadCameraInfo(camera_info_url);
         m_camera_info_msg = m_camera_info_manager->getCameraInfo();
@@ -49,7 +61,7 @@ void HikCameraNode::initHikCamera() {
 void HikCameraNode::core() {
     while (!m_hik_driver.isConnected()) {
         std::this_thread::sleep_for(std::chrono::seconds(2));
-        m_hik_driver.connectDevice(0);
+        m_hik_driver.connectDevice(this->get_parameter("camera_index").as_int());
         initHikCamera();
     }
     RCLCPP_INFO(this->get_logger(), "Pushing camera msg...");
@@ -62,10 +74,18 @@ void HikCameraNode::core() {
     m_convert_param.nHeight = m_hik_img_info.nHeightValue;
     m_convert_param.enDstPixelType = PixelType_Gvsp_RGB8_Packed;
 
-    m_camera_info_msg.header.frame_id = m_image_msg.header.frame_id = "camera_optical_frame";
+    m_camera_info_msg.header.frame_id = m_image_msg.header.frame_id =
+        this->get_parameter("camera_frame").as_string();
     m_image_msg.encoding = "rgb8";
     void* handle = m_hik_driver.getHandle();
     while (rclcpp::ok()) {
+        // check
+        if (!m_enable) return;
+        while (!m_hik_driver.isConnected()) {
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+            m_hik_driver.connectDevice(this->get_parameter("camera_index").as_int());
+            initHikCamera();
+        }
         if (m_hik_driver.readImageData(out_frame, 1000)) {
             // hik sdk
             m_convert_param.pDstBuffer = m_image_msg.data.data();

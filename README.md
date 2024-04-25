@@ -1,18 +1,19 @@
-## Use `Docker` build
+## Use `Docker`
 
 ```shell
-# pull
-docker pull ros:humble-ros-base
+# pull dokcer images
+docker pull yxsakana/rm_auto_aim:<TAG>
 
-# build
+# OR Use Dockerfile to build images
 docker build \
     --network=host \
     --build-arg https_proxy="127.0.0.1:7890" \
     --build-arg HTTPS_PROXY="127.0.0.1:7890" \
-    -t rm_auto_aim:infantry .
+    -t rm_auto_aim:<TAG> .
 
 # run
 docker run \
+	--network host \
     --privileged \
     --device=/dev/dri:/dev/dri \
     --device=/dev/ttyACM0:/dev/ttyACM0 \
@@ -21,7 +22,7 @@ docker run \
     --volume=/tmp/.X11-unix:/tmp/.X11-unix: \
     --name rm_auto_aim \
     rm_auto_aim \
-    /rm_auto_aim/src/WatchDog infantry_CS004
+    /rm_auto_aim/src/WatchDog infantry_CS016
 ```
 
 ## Configure program to run at system startup

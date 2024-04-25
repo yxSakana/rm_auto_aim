@@ -1,4 +1,3 @@
-
 #include <armor_detector/detector_node.h>
 
 // std
@@ -28,16 +27,16 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions& options)
     declareParams();
     // Publisher
     m_armors_pub = this->create_publisher<
-        auto_aim_interfaces::msg::Armors>("/armor_detector/armors", rclcpp::SensorDataQoS());
+        auto_aim_interfaces::msg::Armors>("armor_detector/armors", rclcpp::SensorDataQoS());
     // Subscription
     m_cam_info_sub = this->create_subscription<
-        sensor_msgs::msg::CameraInfo>("/camera_info", rclcpp::SensorDataQoS(),
+        sensor_msgs::msg::CameraInfo>("camera_info", rclcpp::SensorDataQoS(),
         std::bind(&ArmorDetectorNode::subCamInfoCallback, this, std::placeholders::_1));
     m_img_sub = this->create_subscription<sensor_msgs::msg::Image>(
-        "/image_raw", rclcpp::SensorDataQoS(),
+        "image_raw", rclcpp::SensorDataQoS(),
         std::bind(&ArmorDetectorNode::subImageCallback, this, std::placeholders::_1));
     // Debug publisher
-    m_result_img_pub = image_transport::create_publisher(this, "/armor_detector/result_img");
+    m_result_img_pub = image_transport::create_publisher(this, "armor_detector/result_img");
 }
 
 void ArmorDetectorNode::declareParams() {
@@ -110,11 +109,11 @@ void ArmorDetectorNode::subImageCallback(const sensor_msgs::msg::Image::ConstSha
             armor.pose.position.y = tvec.at<double>(1);
             armor.pose.position.z = tvec.at<double>(2);
             orientationFromRvec(rvec, armor.pose.orientation);
-            tf2::Quaternion tfq;
-            tf2::fromMsg(armor.pose.orientation, tfq);
-            double r, p, y;
-            tf2::Matrix3x3(tfq).getRPY(r, p, y);
-            RCLCPP_INFO(this->get_logger(), "yaw: %f", y * 180.0 / M_PI);
+            // tf2::Quaternion tfq;
+            // tf2::fromMsg(armor.pose.orientation, tfq);
+            // double r, p, y;
+            // tf2::Matrix3x3(tfq).getRPY(r, p, y);
+            // RCLCPP_INFO(this->get_logger(), "yaw: %f", y * 180.0 / M_PI);
             m_armors_msg.armors.emplace_back(armor);
         }
     }
