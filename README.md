@@ -2,7 +2,7 @@
 
 ```shell
 # pull dokcer images
-docker pull yxsakana/rm_auto_aim:<TAG>
+docker pull yxsakana/rm_auto_aim:latest
 
 # OR Use Dockerfile to build images
 docker build \
