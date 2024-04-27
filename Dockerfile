@@ -9,7 +9,7 @@ WORKDIR /rm_auto_aim
 
 # init
 RUN apt-get update && \
-    apt-get install wget curl git cmake ninja-build kmod ros-humble-foxglove-bridge -y
+    apt-get install vim wget curl git cmake ninja-build kmod ros-humble-foxglove-bridge -y
 
 # apt-get install gpg-agent -y && \
 # wget https://repositories.intel.com/gpu/ubuntu/dists/jammy/lts/2350/intel-gpu-ubuntu-jammy-2350.run && \
@@ -43,4 +43,8 @@ RUN cd /rm_auto_aim && git clone https://github.com/yxSakana/rm_auto_aim.git ./s
     sed --in-place --expression \
         '$isource "/rm_auto_aim/install/setup.bash"' \
         /ros_entrypoint.sh && \
-    rm -Rf /var/lib/apt/lists/*
+    rm -Rf /var/lib/apt/lists/* && \
+    echo "source "/opt/ros/humble/setup.sh"" >> /root/.bashrc && \
+    echo 'expoer LD_LIBRARY_PATH=/rm_auto_aim/src/hik_camera/hik_sdk/lib/amd64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}' >> ~/root/.bashrc && \
+    echo "source "/rm_auto_aim/install/setup.bash"" >> /root/.bashrc && \
+    echo "source "/usr/local/setupvars.sh"" >> /root/.bashrc

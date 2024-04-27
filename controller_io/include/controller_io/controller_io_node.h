@@ -14,6 +14,7 @@
 
 namespace armor_auto_aim {
 class ControllerIONode: public rclcpp::Node {
+    using ResultFuturePtr = std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>>;
     // IPC
     static constexpr int mPCId = 0;
     static constexpr int mTimestampPackte = 0;
@@ -24,6 +25,7 @@ class ControllerIONode: public rclcpp::Node {
     static constexpr int mNeedUpdateTimestamp = 0;
     static constexpr int mGimbalPose = 1;
     static constexpr int mControllerAim = 2;
+    static constexpr int mSetTargetColor = 3;
 public:
     ControllerIONode(const rclcpp::NodeOptions& options);
 private:
@@ -34,6 +36,9 @@ private:
     rclcpp::Subscription<auto_aim_interfaces::msg::Target>::SharedPtr m_target_sub;
     // Client
     rclcpp::Client<custom_serial_interfaces::srv::SendPackage>::SharedPtr m_serial_cli;
+    // Armor detector target color client
+    rclcpp::AsyncParametersClient::SharedPtr m_detect_color_cli;
+    ResultFuturePtr m_set_param_future;
     
     // visualization
     visualization_msgs::msg::Marker m_aim_marker;
@@ -46,6 +51,8 @@ private:
     void serialHandle(const custom_serial_interfaces::msg::Receive::SharedPtr serial_msg);
 
     void trackerCallback(const auto_aim_interfaces::msg::Target::SharedPtr target_msg);
+
+    void setParam(const rclcpp::Parameter& param);
 };
 }
 

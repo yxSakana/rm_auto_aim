@@ -16,11 +16,25 @@ node_params = os.path.join(
 # robot state publisher
 camera_offset = yaml.safe_load(open(os.path.join(
     get_package_share_directory("auto_aim"), "config", "camera_offset.yaml")))
-robot_description = Command([
-    "xacro ", os.path.join(
-        get_package_share_directory("robot_descript"), "urdf", "robot_descript.urdf.xacro"),
-    " xyz:=", camera_offset[robot_type]["xyz"],
-    " rpy:=", camera_offset[robot_type]["rpy"]])
+if robot_type == "sentry":
+    robot_description = Command([
+        "xacro ", os.path.join(
+            get_package_share_directory("robot_descript"), "urdf", "sentry_robot_descript.urdf.xacro"),
+        "odom2gimbal_xyz:="        , camera_offset[robot_type]["odom2gimbal_xyz"],
+        "odom2gimbal_rpy:="        , camera_offset[robot_type]["odom2gimbal_rpy"],
+        "odom2slave_gimbal_xyz:="  , camera_offset[robot_type]["odom2slave_gimbal_xyz"],
+        "odom2slave_gimbal_rpy:="  , camera_offset[robot_type]["odom2slave_gimbal_rpy"],
+        "gimbal2camera_xyz:="      , camera_offset[robot_type]["gimbal2camera_xyz"],
+        "gimbal2camera_rpy:="      , camera_offset[robot_type]["gimbal2camera_rpy"],
+        "gimbal2slave_camera_xyz:=", camera_offset[robot_type]["gimbal2slave_camera_xyz"],
+        "gimbal2slave_camera_rpy:=", camera_offset[robot_type]["gimbal2slave_camera_rpy"],
+    ])
+else:
+    robot_description = Command([
+        "xacro ", os.path.join(
+            get_package_share_directory("robot_descript"), "urdf", "robot_descript.urdf.xacro"),
+        " xyz:=", camera_offset[robot_type]["xyz"],
+        " rpy:=", camera_offset[robot_type]["rpy"]])
 robot_state_publisher_node = Node(
     package="robot_state_publisher",
     executable="robot_state_publisher",
@@ -28,6 +42,14 @@ robot_state_publisher_node = Node(
         "robot_description": robot_description,
         "publish_frequency": 1000.0
     }],
+    on_exit=Shutdown()
+)
+
+armors_filter = Node(
+    package="armor_detector_filter",
+    executable="armor_detector_filter_node",
+    name="armor_detector_filter_node",
+    outpu="both",
     on_exit=Shutdown()
 )
 

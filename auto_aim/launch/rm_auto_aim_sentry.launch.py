@@ -10,7 +10,7 @@ from launch_ros.substitutions import FindPackageShare
 sys.path.append(os.path.join(get_package_share_directory('auto_aim'), 'launch'))
 
 from common import \
-    robot_state_publisher_node, \
+    robot_state_publisher_node, armors_filter, \
     delay_armor_tracker_node, delay_serial_node
 
 def generate_launch_description():
@@ -37,6 +37,7 @@ def generate_launch_description():
                 "armor_detector_ns": "sentry_slave"
             }.items()
         ),
+        armors_filter,
         robot_state_publisher_node,
         delay_armor_tracker_node,
         delay_serial_node,

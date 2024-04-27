@@ -1,29 +1,15 @@
-/sentry_master/hik_camera_node:
+/hik_camera_node:
   ros__parameters:
-    camera_info_url: package://auto_aim/config/CS-016-6mm-M.yaml
+    camera_info_url: package://auto_aim/config/CS-016-8mm.yaml
     camera_frame: "camera_optical_frame" 
     camera_index: 0
-    exposure_time: 4009.0
+    exposure_time: 4000.0
     gain: 16.77
 
-/sentry_slave/hik_camera_node:
-  ros__parameters:
-    camera_info_url: package://auto_aim/config/CS-016-6mm-S.yaml
-    camera_frame: "slave_camera_optical_frame"
-    camera_index: 1
-    exposure_time: 4005.0
-    gain: 16.77
-
-/sentry_master/armor_detector_node:
+/armor_detector_node:
   ros__parameters:
     model_path: opt-0527-001.onnx
-    inference_driver: CPU
-    detect_color: BLUE
-
-/sentry_slave/armor_detector_node:
-  ros__parameters:
-    model_path: opt-0527-001.onnx
-    inference_driver: GPU
+    inference_driver: AUTO
     detect_color: BLUE
 
 /custom_serial_node:

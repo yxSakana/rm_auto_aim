@@ -32,8 +32,11 @@ ControllerIONode::ControllerIONode(const rclcpp::NodeOptions& options)
         std::bind(&ControllerIONode::trackerCallback, this, std::placeholders::_1));
     // Client
     m_serial_cli = this->create_client<SendPackage>("/custom_serial/send");
+    // Armor detector target color client
+    m_detect_color_cli = std::make_shared<rclcpp::AsyncParametersClient>(this,
+        this->declare_parameter("set_param_topic", "armor_detector"));
 
-    // visul
+    // Visualization
     m_aim_marker.ns = "aim";
     m_aim_marker.type = visualization_msgs::msg::Marker::CUBE;
     m_aim_marker.scale.x = m_aim_marker.scale.y = m_aim_marker.scale.z = 0.1;
@@ -102,6 +105,12 @@ void ControllerIONode::serialHandle(const Receive::SharedPtr serial_msg) {
                 m_marker_pub->publish(m_marker_array);
                 break;
             }
+            case mSetTargetColor: {
+                uint8_t color;
+                std::memcpy(&color, serial_msg->data.data(), sizeof(uint8_t));
+                this->setParam(rclcpp::Parameter("detect_color", color));
+                break;
+            }
             default: {
                 RCLCPP_WARN(this->get_logger(), "Unknow func_code: %d", serial_msg->func_code);
             }
@@ -142,6 +151,29 @@ void ControllerIONode::trackerCallback(const Target::SharedPtr target_msg) {
     if (rclcpp::ok()) {
         m_serial_cli->async_send_request(request);
     }
+}
+
+void ControllerIONode::setParam(const rclcpp::Parameter& param) {
+  if (!m_detect_color_cli->service_is_ready()) {
+    RCLCPP_WARN(get_logger(), "Service not ready, skipping parameter set");
+    return;
+  }
+
+  if (
+    !m_set_param_future.valid() ||
+    m_set_param_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+    RCLCPP_INFO(get_logger(), "Setting detect_color to %ld...", param.as_int());
+    m_set_param_future = m_detect_color_cli->set_parameters(
+      {param}, [this, param](const ResultFuturePtr & results) {
+        for (const auto & result : results.get()) {
+          if (!result.successful) {
+            RCLCPP_ERROR(get_logger(), "Failed to set parameter: %s", result.reason.c_str());
+            return;
+          }
+        }
+        RCLCPP_INFO(get_logger(), "Successfully set detect_color to %ld!", param.as_int());
+      });
+  }
 }
 }
 

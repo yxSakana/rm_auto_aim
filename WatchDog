@@ -1,42 +1,94 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+set -e
 
 abs_path() {
-    script_path=$(eval echo $1)
-    directory=$(dirname "${script_path}")
-    pwd -P
+  local script_path=$(eval echo $1)
+  local directory=$(dirname "${script_path}")
+  builtin cd ${directory} || exit
+  pwd -P
 }
 
-SCRIPT_DIR="$(abs_path "${BASH_SOURCE[0]}")" &>/dev/null
-if [[ SCRIPT_DIR == "" ]]; then
-    echo "script dir is emtry!"
-    exit
-fi
+find_tty_device() {
+  TTY_DEVICE=()
+  local i=0
+  for item in /dev/ttyACM*; do
+    if [ -c $item ]; then
+      TTY_DEVICE+=(${item})
+    fi
+  done
+  echo ${TTY_DEVICE[*]}
+}
 
-# load environment variable
+# var {{{
+AVAILABLE_ROBOT_TYPE=("hero" "infantry_CS004" "infantry_CS016" "sentry")
+RM_AUTO_AIM_DIR="$(abs_path "${BASH_SOURCE[0]}")" &>/dev/null
+ROBOT_TYPE=$1
+RUN_MODE=${2:-"Realse"}
+RM_AUTO_AIM_LOG_PATH="${RM_AUTO_AIM_DIR}/../rumtime_log"
+export LOGGER_SAVE_FILENAME=${RM_AUTO_AIM_LOG_PATH}/$(date +%Y-%m-%d_%H-%M-%S).log
+mkdir -p ${RM_AUTO_AIM_LOG_PATH} || true
+[ RM_AUTO_AIM_DIR ] || { echo "script dir is emtry!"; exit; }
+# }}}
+
+[ $# -ge 1 ] || { printf "\033[31m Usage: WatchDog <ROBOT_TYPE> <RUN_MODE>;\n ROBOT_TYPE: ${AVAILABLE_ROBOT_TYPE[*]};\n RUN MODE: Realse Debug; \033[0m\n"; exit; }
+
+# Base infomation {{{
+source "${RM_AUTO_AIM_DIR}/shell_log.sh"
+info "===================== RM Auto Aim ====================================="
+info "-- Arch: $(arch)"
+info "-- Script directory: ${RM_AUTO_AIM_DIR}"
+info "-- Robot type: ${ROBOT_TYPE}"
+info "-- Run mode: ${RUN_MODE}"
+info "-- TTY: $(find_tty_device)"
+info "-- TTYs: $(ls /dev/ttyACM*)"
+# }}}
+
+# load environment variable {{{
 if [[ $(arch) == "x86_64" ]]; then
-    export LD_LIBRARY_PATH="${SCRIPT_DIR}/src/hik_camera/hik_sdk/lib/amd64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+  info "-- Load hik_sdk"
+  export LD_LIBRARY_PATH="${RM_AUTO_AIM_DIR}/hik_camera/hik_sdk/lib/amd64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
 elif [[ $(arch) == "aarch64" ]]; then
-    export LD_LIBRARY_PATH="${SCRIPT_DIR}/src/hik_camera/hik_sdk/lib/aarch64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+  export LD_LIBRARY_PATH="${RM_AUTO_AIM_DIR}/hik_camera/hik_sdk/lib/aarch64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
 fi
 source "/opt/ros/$ROS_DISTRO/setup.bash"
-source "${SCRIPT_DIR}/install/setup.bash"
-source "/usr/local/setupvars.sh"
+source "${RM_AUTO_AIM_DIR}/../install/setup.bash"
+source "/usr/local/setupvars.sh" &>/dev/null
+# }}}
 
-# start foxglove
-if [[ $2 == "Debug" ]]; then
-    ros2 launch foxglove_bridge foxglove_bridge_launch.xml &
+# start foxglove {{{
+if [[ $RUN_MODE == "Debug" ]]; then
+  info "-- Debug mode"
+  notice "-- Run foxglove_bridge"
+  port_pattern="WebSocket server listening at .*$"
+  export RCUTILS_COLORIZED_OUTPUT=0
+  ros2 launch foxglove_bridge foxglove_bridge_launch.xml > "${RM_AUTO_AIM_LOG_PATH}/.foxglove-out" &
+  sleep 1
+  port_info=$(grep -oE "${port_pattern}" "${RM_AUTO_AIM_LOG_PATH}/.foxglove-out")
+  info "-- Foxglove port: ${port_info}"
 fi
+# }}}
 
 # pull github repository
-if [[ $(ping -c github.com &>/dev/null) ]]; then
-    cd ${SCRIPT_DIR}/..
-    git pull &>/dev/null
+if curl -m 2 -I https://github.com &>/dev/null; then
+  (cd ${RM_AUTO_AIM_DIR} && git pull &>/dev/null && info "-- Pull github repository") ||
+    warn "Failed to pull github repository"
+else
+  warn "Can't connect github"
 fi
 
 # write robot_type
-echo $1 > "${SCRIPT_DIR}/src/auto_aim/config/robot_type"
+echo ${ROBOT_TYPE} > "${RM_AUTO_AIM_DIR}/auto_aim/config/robot_type"
 # build
+cd ${RM_AUTO_AIM_DIR}/..
+info "-- Building..."
 colcon build --symlink-install &>/dev/null
 # run
-ros2 launch auto_aim rm_auto_aim.launch.py
-
+info "-- Run at 2 sec..."
+sleep 2
+export RCUTILS_COLORIZED_OUTPUT=0
+if [ ${ROBOT_TYPE} = "sentry" ]; then 
+  ros2 launch auto_aim rm_auto_aim_sentry.launch.py | tee -a ${LOGGER_SAVE_FILENAME}
+else
+  ros2 launch auto_aim rm_auto_aim.launch.py | tee -a ${LOGGER_SAVE_FILENAME}
+fi

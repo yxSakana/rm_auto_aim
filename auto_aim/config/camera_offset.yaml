@@ -1,6 +1,20 @@
+hero:
+  xyz: "\"0.00  0.13  0.05\""
+  rpy: "\"0.00  0.00  0.00\""
 infantry_CS004:
   xyz: "\"0.00  0.13  0.05\""
   rpy: "\"0.00  0.00  0.00\""
 infantry_CS016:
   xyz: "\"0.00  0.13  0.05\""
   rpy: "\"0.00  0.00  0.00\""
+sentry:
+    # gimbal
+    odom2gimbal_xyz:          "\"0.0 0.0 0.0\""
+    odom2gimbal_rpy:          "\"0.0 0.0 0.0\""
+    odom2slave_gimbal_xyz:    "\"0.0 0.0 0.0\""
+    odom2slave_gimbal_rpy:    "\"0.0 0.0 0.0\""
+    # gimbal 2 camera
+    gimbal2camera_xyz:        "\"0.0 0.0 0.0\""
+    gimbal2camera_rpy:        "\"0.0 0.0 0.0\""
+    gimbal2slave_camera_xyz:  "\"0.0 0.0 0.0\""
+    gimbal2slave_camera_rpy:  "\"0.0 0.0 0.0\""
