@@ -49,7 +49,7 @@ armors_filter = Node(
     package="armor_detector_filter",
     executable="armor_detector_filter_node",
     name="armor_detector_filter_node",
-    outpu="both",
+    output="both",
     on_exit=Shutdown()
 )
 

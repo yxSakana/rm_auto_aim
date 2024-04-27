@@ -19,7 +19,8 @@ docker run \
     --device=/dev/ttyACM0:/dev/ttyACM0 \
     --volume=/dev/bus/usb:/dev/bus/usb \
     --volume=/dev/ttyACM0:/dev/ttyACM0 \
-    --volume=/tmp/.X11-unix:/tmp/.X11-unix: \
+    --volume=/tmp/.X11-unix:/tmp/.X11-unix \
+    --volume=./rm_auto_aim/log:/rm_auto_aim/runtime_log \
     --name rm_auto_aim \
     rm_auto_aim \
     /rm_auto_aim/src/WatchDog infantry_CS016

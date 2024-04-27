@@ -25,7 +25,7 @@ AVAILABLE_ROBOT_TYPE=("hero" "infantry_CS004" "infantry_CS016" "sentry")
 RM_AUTO_AIM_DIR="$(abs_path "${BASH_SOURCE[0]}")" &>/dev/null
 ROBOT_TYPE=$1
 RUN_MODE=${2:-"Realse"}
-RM_AUTO_AIM_LOG_PATH="${RM_AUTO_AIM_DIR}/../rumtime_log"
+RM_AUTO_AIM_LOG_PATH="${RM_AUTO_AIM_DIR}/../runtime_log"
 export LOGGER_SAVE_FILENAME=${RM_AUTO_AIM_LOG_PATH}/$(date +%Y-%m-%d_%H-%M-%S).log
 mkdir -p ${RM_AUTO_AIM_LOG_PATH} || true
 [ RM_AUTO_AIM_DIR ] || { echo "script dir is emtry!"; exit; }
@@ -70,8 +70,9 @@ fi
 # }}}
 
 # pull github repository
+info "-- Try pull repository from github repository..."
 if curl -m 2 -I https://github.com &>/dev/null; then
-  (cd ${RM_AUTO_AIM_DIR} && git pull &>/dev/null && info "-- Pull github repository") ||
+  (cd ${RM_AUTO_AIM_DIR} && git pull && info "-- Pull github repository => OK") ||
     warn "Failed to pull github repository"
 else
   warn "Can't connect github"
