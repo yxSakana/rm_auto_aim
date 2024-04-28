@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -e
-
 abs_path() {
   local script_path=$(eval echo $1)
   local directory=$(dirname "${script_path}")

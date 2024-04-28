@@ -46,6 +46,7 @@
     </joint>
     <!--  -->
     <link name="camera_optical_frame" />
+    <link name="slave_camera_optical_frame" />
 
     <joint name="camera_optical_joint" type="fixed">
         <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}" />

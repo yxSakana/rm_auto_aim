@@ -31,6 +31,8 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions& options)
     // Publisher
     m_target_pub = this->create_publisher<
         auto_aim_interfaces::msg::Target>("/armor_tracker/target", rclcpp::SensorDataQoS());
+    // Client
+    m_cam_enable_cli = this->create_client<std_srvs::srv::SetBool>("/sentry_slave/hik_camera/enable");
     // Debug Publisher
     // m_odom_pose_pub = this->create_publisher<geometry_msgs::msg::Pose>("/armor_tracker/debug/odom_pose", 10);
     // m_yaw_pub = this->create_publisher<std_msgs::msg::Float64>("/armor_tracker/message_yaw", 10);
@@ -74,6 +76,16 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions& options)
 }
 
 void ArmorTrackerNode::subArmorsCallback(const auto_aim_interfaces::msg::Armors::SharedPtr armos_msg) {
+    if (m_tracker.is) {
+        if (!m_cam_enable_cli->service_is_ready()) {
+            RCLCPP_WARN(this->get_logger(), "cam enable service not ready!");
+            return;
+        }
+        auto request = std::make_shared<std_srvs::srv::SetBool_Request>();
+        request->data = true;
+        m_cam_enable_cli->async_send_request(request);
+        RCLCPP_INFO(this->get_logger(), "cam disenable!");
+    }
     for (auto& armor: armos_msg->armors) {
         geometry_msgs::msg::PoseStamped ps;
         ps.header = armos_msg->header;

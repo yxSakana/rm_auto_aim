@@ -45,6 +45,6 @@ RUN cd /rm_auto_aim && git clone https://github.com/yxSakana/rm_auto_aim.git ./s
         /ros_entrypoint.sh && \
     rm -Rf /var/lib/apt/lists/* && \
     echo "source "/opt/ros/humble/setup.sh"" >> /root/.bashrc && \
-    echo 'expoer LD_LIBRARY_PATH=/rm_auto_aim/src/hik_camera/hik_sdk/lib/amd64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}' >> /root/.bashrc && \
+    echo 'export LD_LIBRARY_PATH=/rm_auto_aim/src/hik_camera/hik_sdk/lib/amd64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}' >> /root/.bashrc && \
     echo "source "/rm_auto_aim/install/setup.bash"" >> /root/.bashrc && \
     echo "source "/usr/local/setupvars.sh"" >> /root/.bashrc
