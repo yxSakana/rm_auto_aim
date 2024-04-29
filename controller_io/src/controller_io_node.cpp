@@ -78,6 +78,7 @@ void ControllerIONode::serialHandle(const Receive::SharedPtr serial_msg) {
                 std::memcpy(&gimbal_pose_pkt, serial_msg->data.data(), sizeof(GimbalPosePacket));
                 geometry_msgs::msg::TransformStamped t;
                 t.header.stamp = this->now();
+                t.header.stamp = gimbal_pose_pkt.timestamp; 
                 t.header.frame_id = "odom";
                 t.child_frame_id = serial_msg->id == mControllerId? "gimbal_link": "slave_gimbal_link";
                 tf2::Quaternion q(gimbal_pose_pkt.x, gimbal_pose_pkt.y, gimbal_pose_pkt.z, gimbal_pose_pkt.w);

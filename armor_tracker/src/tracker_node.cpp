@@ -1,5 +1,3 @@
-#define USE_COS
-
 #include <armor_tracker/tracker_node.h>
 
 // ROS2
@@ -76,16 +74,16 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions& options)
 }
 
 void ArmorTrackerNode::subArmorsCallback(const auto_aim_interfaces::msg::Armors::SharedPtr armos_msg) {
-    if (m_tracker.is) {
-        if (!m_cam_enable_cli->service_is_ready()) {
-            RCLCPP_WARN(this->get_logger(), "cam enable service not ready!");
-            return;
-        }
-        auto request = std::make_shared<std_srvs::srv::SetBool_Request>();
-        request->data = true;
-        m_cam_enable_cli->async_send_request(request);
-        RCLCPP_INFO(this->get_logger(), "cam disenable!");
-    }
+//    if (m_tracker.isTracking()) {
+//        if (!m_cam_enable_cli->service_is_ready()) {
+//            RCLCPP_WARN(this->get_logger(), "cam enable service not ready!");
+//            return;
+//        }
+//        auto request = std::make_shared<std_srvs::srv::SetBool_Request>();
+//        request->data = true;
+//        m_cam_enable_cli->async_send_request(request);
+//        RCLCPP_INFO(this->get_logger(), "cam disenable!");
+//    }
     for (auto& armor: armos_msg->armors) {
         geometry_msgs::msg::PoseStamped ps;
         ps.header = armos_msg->header;

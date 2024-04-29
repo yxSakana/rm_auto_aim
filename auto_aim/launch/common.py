@@ -16,6 +16,7 @@ node_params = os.path.join(
 # robot state publisher
 camera_offset = yaml.safe_load(open(os.path.join(
     get_package_share_directory("auto_aim"), "config", "camera_offset.yaml")))
+
 if robot_type == "sentry":
     robot_description = Command([
         "xacro ", os.path.join(
@@ -35,6 +36,7 @@ else:
             get_package_share_directory("robot_descript"), "urdf", "robot_descript.urdf.xacro"),
         " xyz:=", camera_offset[robot_type]["xyz"],
         " rpy:=", camera_offset[robot_type]["rpy"]])
+
 robot_state_publisher_node = Node(
     package="robot_state_publisher",
     executable="robot_state_publisher",

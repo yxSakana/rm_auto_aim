@@ -89,7 +89,7 @@ public:
     Eigen::VectorXd measurement;
     double dz, another_r;
 private:
-    double m_MaxMatchDistance = 0.5;
+    double m_MaxMatchDistance = 2.0;
     double m_MaxMatchYaw = 1.0;
 
     Eigen::VectorXd m_target_predict_state;

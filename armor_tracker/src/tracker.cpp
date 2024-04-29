@@ -107,7 +107,8 @@ void Tracker::updateTracker(const auto_aim_interfaces::msg::Armors::SharedPtr ar
         } else if (same_id_armor_count == 1 && yaw_difference > m_MaxMatchYaw) {
             handleArmorJump(*same_id_armor);
         } else {
-            RCLCPP_WARN(rclcpp::get_logger("armor_tracker"), "No matched armor!");
+            RCLCPP_WARN(rclcpp::get_logger("armor_tracker"), "No matched armor! %lf > %lf(%lf)",
+                min_position_difference, m_MaxMatchDistance, min_position_difference - m_MaxMatchDistance);
         }
     }
     if (m_target_predict_state(8) < 0.12) {
@@ -177,9 +178,9 @@ void Tracker::handleArmorJump(const auto_aim_interfaces::msg::Armor& same_id_arm
 }
 
 void Tracker::updateArmorNum(const auto_aim_interfaces::msg::Armor& armor) {
-    if (armor.type == "SMALL" && armor.number == 6)
+    if (armor.number == 6)
         m_armor_num = 3;
-    if (armor.type == "LARGE" && (armor.number == 3 || armor.number == 4 || armor.number == 5))
+    else if (armor.type == "LARGE" && (armor.number == 3 || armor.number == 4 || armor.number == 5))
         m_armor_num = 2;
     else
         m_armor_num = 4;

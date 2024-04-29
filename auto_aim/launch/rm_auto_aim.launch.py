@@ -9,11 +9,12 @@ from launch.substitutions import PathJoinSubstitution, TextSubstitution
 from launch_ros.substitutions import FindPackageShare
 sys.path.append(os.path.join(get_package_share_directory('auto_aim'), 'launch'))
 
-from common import \
+from common import robot_type, \
     robot_state_publisher_node, \
     delay_armor_tracker_node, delay_serial_node
 
 def generate_launch_description():
+    print("robot type: ", robot_type)
     return LaunchDescription([
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([

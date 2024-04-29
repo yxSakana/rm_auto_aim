@@ -81,6 +81,7 @@ void ArmorDetectorNode::subImageCallback(const sensor_msgs::msg::Image::ConstSha
                  result.color == 2)
                 continue;
             armor.number = result.classification;
+            armor.number = 6;
             armor.color = result.color? "BLUE": "RED";
             // armor apex
             std::vector<cv::Point2f> img_points(result.armor_apex, result.armor_apex + 4);
@@ -88,8 +89,8 @@ void ArmorDetectorNode::subImageCallback(const sensor_msgs::msg::Image::ConstSha
             cv::RotatedRect rrect = cv::minAreaRect(img_points);
             auto ratio = std::max(rrect.size.height, rrect.size.width) /
                                 std::min(rrect.size.height, rrect.size.width);
-            // RCLCPP_INFO(this->get_logger(), "ratio: %f", ratio);
-            armor.type  = ratio < 2.8f?  "SMALL":"LARGE";
+//             RCLCPP_INFO(this->get_logger(), "ratio: %f", ratio);
+            armor.type  = ratio < 3.0f?  "SMALL":"LARGE";
             if (!m_pnp_solver->pnpSolver(armor, img_points, rvec, tvec)) continue;
             armor.distance_to_center = m_pnp_solver->getDistance(rrect.center);
             // Draw armor in debug img

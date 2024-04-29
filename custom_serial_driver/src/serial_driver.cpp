@@ -122,7 +122,7 @@ void SerialDriverNode::receiveData() {
         try {
             m_driver->port()->receive(buff);
         } catch (const std::exception& e) {
-            RCLCPP_ERROR(this->get_logger(), "receive error! %s", e.what());
+            RCLCPP_ERROR_THROTTLE(this->get_logger(), *this->get_clock(), 500, "receive error! %s", e.what());
         }
         if (buff[0] == 0x5A) {
             pbuff = buff.data();
