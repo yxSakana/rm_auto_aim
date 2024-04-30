@@ -34,7 +34,7 @@ ControllerIONode::ControllerIONode(const rclcpp::NodeOptions& options)
     m_serial_cli = this->create_client<SendPackage>("/custom_serial/send");
     // Armor detector target color client
     m_detect_color_cli = std::make_shared<rclcpp::AsyncParametersClient>(this,
-        this->declare_parameter("set_param_topic", "armor_detector"));
+        this->declare_parameter("set_param_topic", "armor_detector_node"));
 
     // Visualization
     m_aim_marker.ns = "aim";
@@ -78,7 +78,8 @@ void ControllerIONode::serialHandle(const Receive::SharedPtr serial_msg) {
                 std::memcpy(&gimbal_pose_pkt, serial_msg->data.data(), sizeof(GimbalPosePacket));
                 geometry_msgs::msg::TransformStamped t;
                 t.header.stamp = this->now();
-                t.header.stamp = gimbal_pose_pkt.timestamp; 
+                // t.header.stamp = rclcpp::Time().from_nanoseconds(timestamp_nanoseconds);
+                // t.header.stamp = gimbal_pose_pkt.timestamp;
                 t.header.frame_id = "odom";
                 t.child_frame_id = serial_msg->id == mControllerId? "gimbal_link": "slave_gimbal_link";
                 tf2::Quaternion q(gimbal_pose_pkt.x, gimbal_pose_pkt.y, gimbal_pose_pkt.z, gimbal_pose_pkt.w);
@@ -109,7 +110,7 @@ void ControllerIONode::serialHandle(const Receive::SharedPtr serial_msg) {
             case mSetTargetColor: {
                 uint8_t color;
                 std::memcpy(&color, serial_msg->data.data(), sizeof(uint8_t));
-                this->setParam(rclcpp::Parameter("detect_color", color));
+                this->setParam(rclcpp::Parameter("detect_color", color? "BLUE": "RED"));
                 break;
             }
             default: {
@@ -159,20 +160,34 @@ void ControllerIONode::setParam(const rclcpp::Parameter& param) {
     RCLCPP_WARN(get_logger(), "Service not ready, skipping parameter set");
     return;
   }
-
+//   auto p = param.get_value();
+//   RCLCPP_INFO(this->get_logger(), "type: %s; val: %s", param.get_type_name().c_str(), param.as_string().c_str());
   if (
     !m_set_param_future.valid() ||
     m_set_param_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-    RCLCPP_INFO(get_logger(), "Setting detect_color to %ld...", param.as_int());
+    RCLCPP_INFO(get_logger(), "Setting detect_color to %s...", param.as_string().c_str());
     m_set_param_future = m_detect_color_cli->set_parameters(
-      {param}, [this, param](const ResultFuturePtr & results) {
-        for (const auto & result : results.get()) {
+      {param}, [this, param](const ResultFuturePtr& results) {
+        for (const auto& result : results.get()) {
           if (!result.successful) {
             RCLCPP_ERROR(get_logger(), "Failed to set parameter: %s", result.reason.c_str());
             return;
           }
         }
-        RCLCPP_INFO(get_logger(), "Successfully set detect_color to %ld!", param.as_int());
+        RCLCPP_INFO(get_logger(), "Successfully set detect_color to %s!", param.as_string().c_str());
+        using namespace std::chrono_literals;
+
+        auto request = std::make_shared<SendPackage::Request>();
+        request->func_code = mSetTargetColor;
+        request->id = mPCId;
+        request->len = 0;
+        request->data.resize(0);
+
+        while (!m_serial_cli->wait_for_service(500ms)) RCLCPP_WARN(this->get_logger(), "wait service timeout!");
+        if (rclcpp::ok()) {
+            m_serial_cli->async_send_request(request);
+            RCLCPP_INFO(this->get_logger(), "Set color to noticed controller!");
+        }
       });
   }
 }

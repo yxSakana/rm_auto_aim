@@ -54,11 +54,10 @@ void TrackerStateMachine::update(bool detector_result) {
 void Tracker::initTracker(const auto_aim_interfaces::msg::Armors::SharedPtr armors_msg) {
     if (armors_msg->armors.empty() || ekf == nullptr)
         return;
-    // 选择要跟踪的装甲板(优先选择距离最近的)(en: Select tracked armor)
+    // 选择要跟踪的装甲板(优先选择距离相机光心最近的)(en: Select tracked armor)
     double min_distance = DBL_MAX;
     tracked_armor = armors_msg->armors[0];
     for (const auto& armor: armors_msg->armors) {
-        // TODO: 是否需要改为 (z, x) 与 image_point(x, y)的距离
         if (armor.distance_to_center < min_distance) {
             min_distance = armor.distance_to_center;
             tracked_armor = armor;
@@ -77,6 +76,9 @@ void Tracker::updateTracker(const auto_aim_interfaces::msg::Armors::SharedPtr ar
     const auto_aim_interfaces::msg::Armor* same_id_armor;
     int same_id_armor_count = 0;
     m_target_predict_state = ekf->update();
+    // xxx
+    if (!isTracking())
+        m_is_complex_pattern = false;
     // 寻找tracked装甲板
     if (!armors_msg->armors.empty()) {
         double min_position_difference = DBL_MAX;
@@ -84,10 +86,6 @@ void Tracker::updateTracker(const auto_aim_interfaces::msg::Armors::SharedPtr ar
         Eigen::Vector3d measurement_position_vec;
         Eigen::Vector3d predicted_position_vec(getArmorPositionFromState(m_target_predict_state));
         for (const auto& armor: armors_msg->armors) {
-            if (armor.number == m_tracked_id) {
-               same_id_armor = &armor;
-               same_id_armor_count++;
-            }
             auto const& p = armor.world_pose.position;
             measurement_position_vec = Eigen::Vector3d(p.x, p.y, p.z);
             double position_difference = (predicted_position_vec - measurement_position_vec).norm();
@@ -96,19 +94,43 @@ void Tracker::updateTracker(const auto_aim_interfaces::msg::Armors::SharedPtr ar
                 yaw_difference = std::abs(m_target_predict_state[6] - orientationToYaw(armor.world_pose.orientation));
                 tracked_armor = armor;
             }
+            // {{{
+            if ((armor.number == 0 || armor.number == 6) &&
+                position_difference < m_max_match_distance+1.0 &&
+                m_is_complex_pattern == false) {
+                m_is_complex_pattern = true;
+                switch (m_comlex_pattern_mode) {
+                    case 1: {
+                        m_armor_num = 3;
+                        break;
+                    }
+                    case 2: {
+                        m_armor_num = 4;
+                        break;
+                    }
+                }
+            }
+            /// }}}
+            bool is_same = m_is_complex_pattern
+                ? position_difference < m_max_match_distance
+                : armor.number == m_tracked_id;
+            if (is_same) {
+                same_id_armor = &armor;
+                same_id_armor_count++;
+            }
         }
         // 后验及装甲板跳变处理
-        if (min_position_difference < m_MaxMatchDistance &&
-            yaw_difference < m_MaxMatchYaw) {
+        if (min_position_difference < m_max_match_distance &&
+            yaw_difference < m_max_match_yaw) {
             is_matched = true;
             auto const& p = tracked_armor.world_pose.position;
             measurement = Eigen::Vector4d(p.x, p.y, p.z, orientationToYaw(tracked_armor.world_pose.orientation));
             m_target_predict_state = ekf->predict(measurement);
-        } else if (same_id_armor_count == 1 && yaw_difference > m_MaxMatchYaw) {
+        } else if (same_id_armor_count == 1 && yaw_difference > m_max_match_yaw) {
             handleArmorJump(*same_id_armor);
         } else {
             RCLCPP_WARN(rclcpp::get_logger("armor_tracker"), "No matched armor! %lf > %lf(%lf)",
-                min_position_difference, m_MaxMatchDistance, min_position_difference - m_MaxMatchDistance);
+                min_position_difference, m_max_match_distance, min_position_difference - m_max_match_distance);
         }
     }
     if (m_target_predict_state(8) < 0.12) {
@@ -164,7 +186,7 @@ void Tracker::handleArmorJump(const auto_aim_interfaces::msg::Armor& same_id_arm
     auto p = same_id_armor.world_pose.position;
     Eigen::Vector3d current_p(p.x, p.y, p.z);
     Eigen::Vector3d infer_p = getArmorPositionFromState(m_target_predict_state);
-    if ((current_p - infer_p).norm() > m_MaxMatchDistance) {
+    if ((current_p - infer_p).norm() > m_max_match_distance) {
         double r = m_target_predict_state(8);
         m_target_predict_state(0) = p.x + r * cos(yaw);  // xc
         m_target_predict_state(1) = 0;                   // vxc
@@ -178,7 +200,7 @@ void Tracker::handleArmorJump(const auto_aim_interfaces::msg::Armor& same_id_arm
 }
 
 void Tracker::updateArmorNum(const auto_aim_interfaces::msg::Armor& armor) {
-    if (armor.number == 6)
+    if (armor.number == 0)
         m_armor_num = 3;
     else if (armor.type == "LARGE" && (armor.number == 3 || armor.number == 4 || armor.number == 5))
         m_armor_num = 2;

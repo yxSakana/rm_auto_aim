@@ -81,7 +81,7 @@ void ArmorDetectorNode::subImageCallback(const sensor_msgs::msg::Image::ConstSha
                  result.color == 2)
                 continue;
             armor.number = result.classification;
-            armor.number = 6;
+            // armor.number = 6;
             armor.color = result.color? "BLUE": "RED";
             // armor apex
             std::vector<cv::Point2f> img_points(result.armor_apex, result.armor_apex + 4);

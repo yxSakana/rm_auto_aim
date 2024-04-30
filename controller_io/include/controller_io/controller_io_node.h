@@ -24,8 +24,7 @@ class ControllerIONode: public rclcpp::Node {
     static constexpr int mSlaveControllerId = 2;
     static constexpr int mNeedUpdateTimestamp = 0;
     static constexpr int mGimbalPose = 1;
-    static constexpr int mControllerAim = 2;
-    static constexpr int mSetTargetColor = 3;
+    static constexpr int mSetTargetColor = 2;
 public:
     ControllerIONode(const rclcpp::NodeOptions& options);
 private:
@@ -39,7 +38,7 @@ private:
     // Armor detector target color client
     rclcpp::AsyncParametersClient::SharedPtr m_detect_color_cli;
     ResultFuturePtr m_set_param_future;
-    
+
     // visualization
     visualization_msgs::msg::Marker m_aim_marker;
     visualization_msgs::msg::MarkerArray m_marker_array;

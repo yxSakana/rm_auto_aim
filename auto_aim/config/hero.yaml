@@ -22,7 +22,14 @@
 
 /armor_tracker_node:
   ros__parameters:
-    #              x     vx     y   vy     z      vz     yaw   vyaw    r
-    q_diagonal: [0.005, 0.0001, 0.002, 0.001, 0.08, 0.0005, 0.001, 0.001, 0.00001] # x vx y vy z vz yaw v_yaw r
-    r_diagonal: [2.5, 0.8, 0.8, 0.4]  # x y z yaw
     odom_frame: "odom"
+    is_sentry: false
+    ekf:
+      #              x     vx     y   vy     z      vz     yaw   vyaw    r
+      q_diagonal: [0.005, 0.0001, 0.002, 0.001, 0.08, 0.0005, 0.001, 0.001, 0.00001] # x vx y vy z vz yaw v_yaw r
+      r_diagonal: [2.5, 0.8, 0.8, 0.4]  # x y z yaw
+    tracker:
+      max_match_distance: 0.5
+      max_match_yaw: 1.0
+      tracking_threshold: 5
+      lost_threshold: 30

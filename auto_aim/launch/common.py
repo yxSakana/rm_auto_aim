@@ -64,7 +64,7 @@ armor_tracker_node = Node(
     output="both",
     on_exit=Shutdown())
 delay_armor_tracker_node = TimerAction(
-    period=1.5,
+    period=2.5,
     actions=[armor_tracker_node]
 )
 # serial
@@ -98,6 +98,6 @@ serial_container = ComposableNodeContainer(
     on_exit=Shutdown()  
 )
 delay_serial_node = TimerAction(
-    period=1.5,
+    period=2.5,
     actions=[serial_container]
 )

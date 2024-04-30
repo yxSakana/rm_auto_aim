@@ -43,13 +43,13 @@ public:
 
     void setTrackingCount(int v) { m_tracking_threshold = v; }
 
-    void setLostCount(int v) { m_lost_threshold = v; }
+    void setlostcount(int v) { m_lost_threshold = v; }
 private:
     State m_state = State::Lost;
     int m_detect_count = 0;
     int m_lost_count = 0;
     int m_tracking_threshold = 5;
-    int m_lost_threshold = 40;
+    int m_lost_threshold = 30;
 
     std::map<State, std::string> m_state_map {
             { State::Lost, "Lost" },
@@ -80,6 +80,12 @@ public:
 
     int getNum() const { return m_armor_num; }
 
+    void setMatchDistance(double v) { m_max_match_distance = v; }
+
+    void setMatchYaw(double v) { m_max_match_yaw = v; }
+
+    void setComlexPatternMode(int v) { m_comlex_pattern_mode = v; }
+
     TrackerStateMachine* getStateMachine() { return &m_tracker_state_machine; }
 
     [[nodiscard]] const Eigen::VectorXd& getTargetPredictSate() const { return m_target_predict_state; }
@@ -89,14 +95,16 @@ public:
     Eigen::VectorXd measurement;
     double dz, another_r;
 private:
-    double m_MaxMatchDistance = 2.0;
-    double m_MaxMatchYaw = 1.0;
-
+    double m_max_match_distance = 2.0;
+    double m_max_match_yaw = 1.0;
     Eigen::VectorXd m_target_predict_state;
     TrackerStateMachine m_tracker_state_machine;
     int m_tracked_id{};  // armor number
     double m_last_yaw = .0;
     int m_armor_num = 0;
+    // complex pattern
+    bool m_is_complex_pattern = false;
+    int m_comlex_pattern_mode = 0; // 0: off; 1: outpost; 2: sentry;
 
     void initEkf(const auto_aim_interfaces::msg::Armor& armor);
 

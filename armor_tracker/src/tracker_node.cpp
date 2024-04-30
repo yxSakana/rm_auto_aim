@@ -9,9 +9,19 @@ namespace armor_auto_aim {
 ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions& options)
     : Node("armor_tracker_node", options) {
     // Parameter
-    this->declare_parameter("r_diagonal", std::vector<double>{1, 1, 1, 1, 1});
-    this->declare_parameter("q_diagonal", std::vector<double>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
     m_odom_frame = this->declare_parameter("odom_frame", "odom");
+    this->declare_parameter("is_sentry", false);
+    this->declare_parameter("ekf.r_diagonal", std::vector<double>{1, 1, 1, 1, 1});
+    this->declare_parameter("ekf.q_diagonal", std::vector<double>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
+    int tt = this->declare_parameter("tracker.tracking_threshold", 5);
+    int lt = this->declare_parameter("tracker.lost_threshold", 30);
+    double mmd = this->declare_parameter("tracker.max_match_distance", 0.5);
+    double mmy = this->declare_parameter("tracker.max_match_yaw", 1.0);
+    // set trakcer param
+    m_tracker.setMatchDistance(mmd);
+    m_tracker.setMatchYaw(mmy);
+    m_tracker.getStateMachine()->setTrackingCount(tt);
+    m_tracker.getStateMachine()->setlostcount(lt);
     // tf buffer
     m_tf_buffer = std::make_shared<tf2_ros::Buffer>(this->get_clock());
     auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
@@ -74,16 +84,17 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions& options)
 }
 
 void ArmorTrackerNode::subArmorsCallback(const auto_aim_interfaces::msg::Armors::SharedPtr armos_msg) {
-//    if (m_tracker.isTracking()) {
-//        if (!m_cam_enable_cli->service_is_ready()) {
-//            RCLCPP_WARN(this->get_logger(), "cam enable service not ready!");
-//            return;
-//        }
-//        auto request = std::make_shared<std_srvs::srv::SetBool_Request>();
-//        request->data = true;
-//        m_cam_enable_cli->async_send_request(request);
-//        RCLCPP_INFO(this->get_logger(), "cam disenable!");
-//    }
+    if (this->get_parameter("is_sentry").as_bool() &&
+        m_tracker.isTracking()) {
+        if (!m_cam_enable_cli->service_is_ready()) {
+            RCLCPP_WARN(this->get_logger(), "cam enable service not ready!");
+            return;
+        }
+        auto request = std::make_shared<std_srvs::srv::SetBool_Request>();
+        request->data = true;
+        m_cam_enable_cli->async_send_request(request);
+        RCLCPP_INFO(this->get_logger(), "cam disenable!");
+    }
     for (auto& armor: armos_msg->armors) {
         geometry_msgs::msg::PoseStamped ps;
         ps.header = armos_msg->header;
