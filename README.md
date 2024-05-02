@@ -20,7 +20,7 @@ docker run \
     --volume=/dev/bus/usb:/dev/bus/usb \
     --volume=/dev/ttyACM0:/dev/ttyACM0 \
     --volume=/tmp/.X11-unix:/tmp/.X11-unix \
-    --volume=./rm_auto_aim_log:/rm_auto_aim/runtime_log \
+    --volume=/home/$USER/rm_auto_aim_log:/rm_auto_aim/runtime_log \
     --name rm_auto_aim \
     yxsakana/rm_auto_aim \
     /rm_auto_aim/src/WatchDog infantry_CS016
