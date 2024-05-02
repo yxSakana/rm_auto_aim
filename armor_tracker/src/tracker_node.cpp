@@ -84,16 +84,15 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions& options)
 }
 
 void ArmorTrackerNode::subArmorsCallback(const auto_aim_interfaces::msg::Armors::SharedPtr armos_msg) {
-    if (this->get_parameter("is_sentry").as_bool() &&
-        m_tracker.isTracking()) {
+    if (this->get_parameter("is_sentry").as_bool()) {
         if (!m_cam_enable_cli->service_is_ready()) {
             RCLCPP_WARN(this->get_logger(), "cam enable service not ready!");
             return;
         }
         auto request = std::make_shared<std_srvs::srv::SetBool_Request>();
-        request->data = true;
+        request->data = !m_tracker.isTracking();
         m_cam_enable_cli->async_send_request(request);
-        RCLCPP_INFO(this->get_logger(), "cam disenable!");
+        RCLCPP_INFO(this->get_logger(), request->data? "slave cam enable!": "slave cam disenable!");
     }
     for (auto& armor: armos_msg->armors) {
         geometry_msgs::msg::PoseStamped ps;

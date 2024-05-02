@@ -15,19 +15,8 @@ ArmorDetectorFilterNode::ArmorDetectorFilterNode(const rclcpp::NodeOptions& opti
 }
 
 void ArmorDetectorFilterNode::subArmors(const auto_aim_interfaces::msg::Armors::SharedPtr armors_msg) {
-    if (armors_msg->armors.empty()) return;
     std::lock_guard<std::mutex> lk(m_sub_mutex);
     m_armors_pub->publish(*armors_msg);
-    if (!armors_msg->armors.empty()) {
-        if (!m_cam_enable_cli->service_is_ready()) {
-            RCLCPP_WARN(this->get_logger(), "cam enable service not ready!");
-            return;
-        }
-        auto request = std::make_shared<std_srvs::srv::SetBool_Request>();
-        request->data = false;
-        m_cam_enable_cli->async_send_request(request);
-        RCLCPP_INFO(this->get_logger(), "cam disenable!");
-    }
 }
 }
 
