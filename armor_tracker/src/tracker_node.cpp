@@ -207,7 +207,7 @@ void ArmorTrackerNode::initEkf() {
     auto update_Q = [this]()->Eigen::MatrixXd {
         if (m_tracker.ekf->getQ().size() == 0) {
             Eigen::DiagonalMatrix<double, 9> Q;
-            auto q_dio = this->get_parameter("q_diagonal").as_double_array();
+            auto q_dio = this->get_parameter("ekf.q_diagonal").as_double_array();
             Q.diagonal() = Eigen::Map<Eigen::VectorXd>(q_dio.data(), 9, 1);
             return Q;
         } else {
@@ -243,7 +243,7 @@ void ArmorTrackerNode::initEkf() {
     auto update_R = [this](const Eigen::MatrixXd& z)->Eigen::MatrixXd {
         if (m_tracker.ekf->getR().size() == 0) {
             Eigen::DiagonalMatrix<double, 4> R;
-            auto r_dio = this->get_parameter("r_diagonal").as_double_array();
+            auto r_dio = this->get_parameter("ekf.r_diagonal").as_double_array();
             R.diagonal() = Eigen::Map<Eigen::Vector4d>(r_dio.data(), 4, 1);
             return R;
         } else {

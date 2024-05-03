@@ -3,8 +3,8 @@
     camera_info_url: package://auto_aim/config/CS-004.yaml
     camera_frame: "camera_optical_frame" 
     camera_index: 0
-    exposure_time: 3000.0
-    gain: 10.77
+    exposure_time: 1000.0
+    gain: 23.77
 
 /custom_serial_node:
   ros__parameters:
