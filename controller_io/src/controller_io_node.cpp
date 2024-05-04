@@ -58,7 +58,7 @@ void ControllerIONode::serialHandle(const Receive::SharedPtr serial_msg) {
                     std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
                 auto request = std::make_shared<SendPackage::Request>();
                 request->func_code = mTimestampPackte;
-                request->id = mPCId;
+                request->id = serial_msg->id - 10;
                 request->len = sizeof(uint64_t);
                 request->data.resize(request->len);
                 std::memcpy(request->data.data(), &timestamp, sizeof(timestamp));
@@ -142,7 +142,7 @@ void ControllerIONode::trackerCallback(const Target::SharedPtr target_msg) {
 
     auto request = std::make_shared<SendPackage::Request>();
     request->func_code = mAimPacket;
-    request->id = mPCId;
+    request->id = target_msg->is_master? mPCId: mPCId + 1;
     request->len = sizeof(AutoAimPacket);
     request->data.resize(request->len);
     std::memcpy(request->data.data(), &packet, request->len);

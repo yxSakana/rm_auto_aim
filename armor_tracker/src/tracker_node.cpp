@@ -30,7 +30,7 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions& options)
     // tf listensr
     m_tf_listener = std::make_shared<tf2_ros::TransformListener>(*m_tf_buffer);
     // Subscript armors
-    m_armors_sub.subscribe(this, "/armor_detector/armors", rmw_qos_profile_sensor_data);
+    m_armors_sub.subscribe(this, "armor_detector/armors", rmw_qos_profile_sensor_data);
     // tf filter
     m_tf_filter = std::make_shared<tf2_ros::MessageFilter<auto_aim_interfaces::msg::Armors>>(
         m_armors_sub, *m_tf_buffer, m_odom_frame, 10, this->get_node_logging_interface(),
@@ -38,9 +38,7 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions& options)
     m_tf_filter->registerCallback(&ArmorTrackerNode::subArmorsCallback, this);
     // Publisher
     m_target_pub = this->create_publisher<
-        auto_aim_interfaces::msg::Target>("/armor_tracker/target", rclcpp::SensorDataQoS());
-    // Client
-    m_cam_enable_cli = this->create_client<std_srvs::srv::SetBool>("/sentry_slave/hik_camera/enable");
+        auto_aim_interfaces::msg::Target>("armor_tracker/target", rclcpp::SensorDataQoS());
     // Debug Publisher
     // m_odom_pose_pub = this->create_publisher<geometry_msgs::msg::Pose>("/armor_tracker/debug/odom_pose", 10);
     // m_yaw_pub = this->create_publisher<std_msgs::msg::Float64>("/armor_tracker/message_yaw", 10);
@@ -84,16 +82,6 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions& options)
 }
 
 void ArmorTrackerNode::subArmorsCallback(const auto_aim_interfaces::msg::Armors::SharedPtr armos_msg) {
-    if (this->get_parameter("is_sentry").as_bool()) {
-        if (!m_cam_enable_cli->service_is_ready()) {
-            RCLCPP_WARN(this->get_logger(), "cam enable service not ready!");
-            return;
-        }
-        auto request = std::make_shared<std_srvs::srv::SetBool_Request>();
-        request->data = !m_tracker.isTracking();
-        m_cam_enable_cli->async_send_request(request);
-        RCLCPP_INFO(this->get_logger(), request->data? "slave cam enable!": "slave cam disenable!");
-    }
     for (auto& armor: armos_msg->armors) {
         geometry_msgs::msg::PoseStamped ps;
         ps.header = armos_msg->header;
@@ -135,6 +123,7 @@ void ArmorTrackerNode::subArmorsCallback(const auto_aim_interfaces::msg::Armors:
             target_msg.num = m_tracker.getNum();
             target_msg.delay = dt * 1000;
             target_msg.id = m_tracker.tracked_armor.number;
+            target_msg.is_master = armos_msg->header.frame_id == "camera_optical_frame";
             // message yaw
             auto q = m_tracker.tracked_armor.world_pose.orientation;
             tf2::Quaternion tf_q;
@@ -310,7 +299,7 @@ void ArmorTrackerNode::publishMarkers(const auto_aim_interfaces::msg::Target& ta
         m_omega_marker.points.emplace_back(end_point);
         // armors
         m_armors_marker.action = visualization_msgs::msg::Marker::ADD;
-        m_armors_marker.scale.y = m_tracker.tracked_armor.type == "small"? 0.13: 0.5;
+        m_armors_marker.scale.y = m_tracker.tracked_armor.type == "SMALL"? 0.13: 0.5;
         geometry_msgs::msg::Point pa;
         bool is_pair = true;
         int num = m_tracker.getNum();

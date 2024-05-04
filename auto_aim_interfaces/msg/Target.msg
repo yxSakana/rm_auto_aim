@@ -10,3 +10,4 @@ float64 v_yaw
 float64 r1
 float64 r2
 float64 dz
+bool is_master

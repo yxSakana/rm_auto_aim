@@ -200,7 +200,7 @@ void Tracker::handleArmorJump(const auto_aim_interfaces::msg::Armor& same_id_arm
 }
 
 void Tracker::updateArmorNum(const auto_aim_interfaces::msg::Armor& armor) {
-    if (armor.number == 0)
+    if (armor.number == 6)
         m_armor_num = 3;
     else if (armor.type == "LARGE" && (armor.number == 3 || armor.number == 4 || armor.number == 5))
         m_armor_num = 2;

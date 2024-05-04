@@ -43,14 +43,6 @@ robot_state_publisher_node = Node(
     on_exit=Shutdown()
 )
 
-armors_filter = Node(
-    package="armor_detector_filter",
-    executable="armor_detector_filter_node",
-    name="armor_detector_filter_node",
-    output="both",
-    on_exit=Shutdown()
-)
-
 # armor tracker
 armor_tracker_node = Node(
     package="armor_tracker",

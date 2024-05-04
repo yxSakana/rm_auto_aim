@@ -36,8 +36,6 @@ private:
     rclcpp::Publisher<auto_aim_interfaces::msg::Target>::SharedPtr m_target_pub;
     // Subscription
     message_filters::Subscriber<auto_aim_interfaces::msg::Armors> m_armors_sub;
-    // Client
-    rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr m_cam_enable_cli;
     // Visualization marker
     visualization_msgs::msg::Marker m_center_marker;
     visualization_msgs::msg::Marker m_armors_marker;

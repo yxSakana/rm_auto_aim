@@ -44,7 +44,7 @@ void ArmorDetectorNode::declareParams() {
     model_path = ament_index_cpp::get_package_share_directory("armor_detector") + "/model/" + model_path;
     auto inference_driver = this->declare_parameter("inference_driver", "AUTO");
     auto c = this->declare_parameter("detect_color", "BLUE");
-    RCLCPP_INFO(this->get_logger(), "model path_: %s", model_path.c_str());
+    RCLCPP_INFO(this->get_logger(), "model path: %s", model_path.c_str());
     RCLCPP_INFO(this->get_logger(), "target color: %s", c.c_str());
     if (inference_driver == "AUTO")
         m_inference = std::make_unique<Inference>(model_path);
@@ -91,6 +91,11 @@ void ArmorDetectorNode::subImageCallback(const sensor_msgs::msg::Image::ConstSha
                                 std::min(rrect.size.height, rrect.size.width);
 //             RCLCPP_INFO(this->get_logger(), "ratio: %f", ratio);
             armor.type  = ratio < 3.0f?  "SMALL":"LARGE";
+            // {{{
+            if (armor.type == "LARGE" &&
+                  (armor.number == 0 || armor.number == 6) && 
+                  (armor.color == "BLUE")) continue;
+            // }}}
             if (!m_pnp_solver->pnpSolver(armor, img_points, rvec, tvec)) continue;
             armor.distance_to_center = m_pnp_solver->getDistance(rrect.center);
             // Draw armor in debug img
@@ -110,11 +115,6 @@ void ArmorDetectorNode::subImageCallback(const sensor_msgs::msg::Image::ConstSha
             armor.pose.position.y = tvec.at<double>(1);
             armor.pose.position.z = tvec.at<double>(2);
             orientationFromRvec(rvec, armor.pose.orientation);
-            // tf2::Quaternion tfq;
-            // tf2::fromMsg(armor.pose.orientation, tfq);
-            // double r, p, y;
-            // tf2::Matrix3x3(tfq).getRPY(r, p, y);
-            // RCLCPP_INFO(this->get_logger(), "yaw: %f", y * 180.0 / M_PI);
             m_armors_msg.armors.emplace_back(armor);
         }
     }
