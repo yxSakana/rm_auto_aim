@@ -27,6 +27,7 @@ private:
     Tracker m_tracker;
     float dt;
     rclcpp::Time m_last_stamp;
+    bool m_is_debug;
     // tf
     std::string m_odom_frame;
     std::shared_ptr<tf2_ros::Buffer> m_tf_buffer;

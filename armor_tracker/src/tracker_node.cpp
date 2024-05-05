@@ -10,7 +10,7 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions& options)
     : Node("armor_tracker_node", options) {
     // Parameter
     m_odom_frame = this->declare_parameter("odom_frame", "odom");
-    this->declare_parameter("is_sentry", false);
+    m_is_debug = this->declare_parameter("is_debug", true);
     this->declare_parameter("ekf.r_diagonal", std::vector<double>{1, 1, 1, 1, 1});
     this->declare_parameter("ekf.q_diagonal", std::vector<double>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
     int tt = this->declare_parameter("tracker.tracking_threshold", 5);
@@ -39,9 +39,12 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions& options)
     // Publisher
     m_target_pub = this->create_publisher<
         auto_aim_interfaces::msg::Target>("armor_tracker/target", rclcpp::SensorDataQoS());
+    // Compensate for armor detector {{{
+    this->declare_parameter("comlex_pattern_mode", 0);
+    // }}}
     // Debug Publisher
-    // m_odom_pose_pub = this->create_publisher<geometry_msgs::msg::Pose>("/armor_tracker/debug/odom_pose", 10);
-    // m_yaw_pub = this->create_publisher<std_msgs::msg::Float64>("/armor_tracker/message_yaw", 10);
+    // m_odom_pose_pub = this->create_publisher<geometry_msgs::msg::Pose>("armor_tracker/debug/odom_pose", 10);
+    // m_yaw_pub = this->create_publisher<std_msgs::msg::Float64>("armor_tracker/message_yaw", 10);
     // m_debug_angle = this->create_publisher<auto_aim_interfaces::msg::DebugAngle>("/debug/angle", 10);
     // Marker
     // car center
@@ -76,7 +79,7 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions& options)
     m_armors_marker.color.g = 1.0;
     // marker publisher
     m_marker_pub = this->create_publisher<
-        visualization_msgs::msg::MarkerArray>("/armor_tracker/marker", 10);
+        visualization_msgs::msg::MarkerArray>("armor_tracker/marker", 10);
     //
     initEkf();
 }
@@ -93,11 +96,16 @@ void ArmorTrackerNode::subArmorsCallback(const auto_aim_interfaces::msg::Armors:
             return;
         }
     }
+    // Compensate for armor detector {{{
+    // m_tracker.setComlexPatternMode(this->get_parameter(
+    //     "comlex_pattern_mode").as_int());
+    // }}}
     // target_msg
     rclcpp::Time timestamp = armos_msg->header.stamp;
     auto_aim_interfaces::msg::Target target_msg;
     target_msg.header.stamp = timestamp;
     target_msg.header.frame_id = m_odom_frame;
+    target_msg.is_master = armos_msg->header.frame_id == "camera_optical_frame";
     if (m_tracker.state() == TrackerStateMachine::State::Lost) {
         m_last_stamp = this->now();
         m_tracker.initTracker(armos_msg);
@@ -123,7 +131,6 @@ void ArmorTrackerNode::subArmorsCallback(const auto_aim_interfaces::msg::Armors:
             target_msg.num = m_tracker.getNum();
             target_msg.delay = dt * 1000;
             target_msg.id = m_tracker.tracked_armor.number;
-            target_msg.is_master = armos_msg->header.frame_id == "camera_optical_frame";
             // message yaw
             auto q = m_tracker.tracked_armor.world_pose.orientation;
             tf2::Quaternion tf_q;
@@ -146,8 +153,8 @@ void ArmorTrackerNode::subArmorsCallback(const auto_aim_interfaces::msg::Armors:
 
     m_last_stamp = timestamp;
     m_target_pub->publish(target_msg);
-
-    this->publishMarkers(target_msg);
+    if (m_is_debug)
+        this->publishMarkers(target_msg);
 }
 
 void ArmorTrackerNode::initEkf() {

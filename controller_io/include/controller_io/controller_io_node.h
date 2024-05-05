@@ -33,11 +33,17 @@ private:
     // Subscription
     rclcpp::Subscription<custom_serial_interfaces::msg::Receive>::SharedPtr m_serial_sub;
     rclcpp::Subscription<auto_aim_interfaces::msg::Target>::SharedPtr m_target_sub;
+    rclcpp::Subscription<auto_aim_interfaces::msg::Target>::SharedPtr m_target_slave_sub;
     // Client
     rclcpp::Client<custom_serial_interfaces::srv::SendPackage>::SharedPtr m_serial_cli;
-    // Armor detector target color client
+    // Armor detector target color, Armro trakcer pattem client
     rclcpp::AsyncParametersClient::SharedPtr m_detect_color_cli;
+    // rclcpp::AsyncParametersClient::SharedPtr
     ResultFuturePtr m_set_param_future;
+    // 
+    std::array<bool, 2> m_trakcer_state;
+    uint8_t m_is_detector_configured;
+    bool m_is_sentry;
 
     // visualization
     visualization_msgs::msg::Marker m_aim_marker;

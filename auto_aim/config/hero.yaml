@@ -8,22 +8,15 @@
 
 /armor_detector_node:
   ros__parameters:
-    model_path: opt-0527-001.onnx
-    inference_driver: AUTO
-    detect_color: BLUE
-
-/custom_serial_node:
-  ros__parameters:
-    device_name: /dev/ttyACM0
-    baud_rate: 115200
-    flow_control: none
-    parity: none
-    stop_bits: "1"
+    model_path: "opt-0527-001.onnx"
+    inference_driver: "AUTO"
+    detect_color: "BLUE"
+    is_debug: true
 
 /armor_tracker_node:
   ros__parameters:
     odom_frame: "odom"
-    is_sentry: false
+    is_debug: true
     ekf:
       #              x     vx     y   vy     z      vz     yaw   vyaw    r
       q_diagonal: [0.005, 0.0001, 0.002, 0.001, 0.08, 0.0005, 0.001, 0.001, 0.00001] # x vx y vy z vz yaw v_yaw r
@@ -33,3 +26,16 @@
       max_match_yaw: 1.0
       tracking_threshold: 5
       lost_threshold: 30
+
+/controller_io_node:
+  ros__parameters:
+    master_tracker_topic: "/armor_tracker"
+    slave_tracker_topic: ""
+
+/custom_serial_node:
+  ros__parameters:
+    device_name: "/dev/ttyACM0"
+    baud_rate: 115200
+    flow_control: none
+    parity: none
+    stop_bits: "1"

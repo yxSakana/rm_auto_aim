@@ -43,18 +43,6 @@ robot_state_publisher_node = Node(
     on_exit=Shutdown()
 )
 
-# armor tracker
-armor_tracker_node = Node(
-    package="armor_tracker",
-    executable="armor_tracker_node",
-    name="armor_tracker_node",
-    parameters=[node_params],
-    output="both",
-    on_exit=Shutdown())
-delay_armor_tracker_node = TimerAction(
-    period=2.5,
-    actions=[armor_tracker_node]
-)
 # serial
 serial_node = ComposableNode(
     package="custom_serial_driver",
@@ -68,6 +56,7 @@ controller_io_node = ComposableNode(
     package="controller_io",
     plugin="armor_auto_aim::ControllerIONode",
     name="controller_io_node",
+    parameters=[node_params],
     extra_arguments=[{
         "user_intra_process_comms": True
     }]
@@ -83,7 +72,7 @@ serial_container = ComposableNodeContainer(
     ],
     output="both",
     emulate_tty=True,
-    on_exit=Shutdown()  
+    on_exit=Shutdown()
 )
 delay_serial_node = TimerAction(
     period=2.5,

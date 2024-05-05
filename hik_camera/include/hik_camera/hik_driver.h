@@ -19,13 +19,19 @@ public:
 
     explicit HikDriver(int index);
 
+    explicit HikDriver(const char* device_serial_number);
+
     ~HikDriver();
 
     void* getHandle() const { return m_handle; }
 
+    std::string getDeviceSerialNumber() const;
+
     int getDeviceNumber();
 
     bool connectDevice(int index);
+
+    bool connectDevice(const char* device_serial_number);
 
     void disconnectDevice();
 
@@ -42,10 +48,11 @@ public:
     MVCC_FLOATVALUE getGain() const;
 
     bool readImageData(MV_FRAME_OUT& buff, const unsigned int& timeout_ms);
+    static uint16_t mConnectedDevices;
 private:
     void* m_handle = nullptr;
     int m_index;
-    bool m_is_connected;
+    bool m_is_connected = false;
     MV_CC_DEVICE_INFO_LIST m_devices;
 
     bool check(const Code& code, const char* mess="") const;

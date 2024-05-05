@@ -1,7 +1,9 @@
 #include <hik_camera/hik_driver.h>
 
+#include <iostream>
 #include <sstream>
 #include <map>
+#include <bitset>
 
 #include <rclcpp/logging.hpp>
 
@@ -21,6 +23,8 @@ const static std::map<unsigned int, std::string> kErrorMess {
             {0x80000106, "节点访问条件有误"}
 };
 
+uint16_t HikDriver::mConnectedDevices = 0;
+
 HikDriver::HikDriver() {
     connectDevice(0);
 }
@@ -29,30 +33,82 @@ HikDriver::HikDriver(int index) {
     connectDevice(index);
 }
 
+HikDriver::HikDriver(const char* device_serial_number) {
+    connectDevice(device_serial_number);
+}
+
 HikDriver::~HikDriver() {
     disconnectDevice();
 }
 
+std::string HikDriver::getDeviceSerialNumber() const {
+    MVCC_STRINGVALUE s;
+    MV_CC_GetStringValue(m_handle, "DeviceSerialNumber", &s);
+    return std::string(s.chCurValue);
+}
+
 int HikDriver::getDeviceNumber() {
-    return check(MV_CC_EnumDevices(MV_USB_DEVICE | MV_GIGE_DEVICE,&m_devices), "EnumDevices")
+    return check(MV_CC_EnumDevices(MV_USB_DEVICE | MV_GIGE_DEVICE, &m_devices), "EnumDevices")
                 ? m_devices.nDeviceNum: 0;
 }
 
 bool HikDriver::connectDevice(int index) {
-    m_is_connected = 
-        check(MV_CC_EnumDevices(MV_USB_DEVICE | MV_GIGE_DEVICE, &m_devices), "EnumDevices") &&
+    bool is_connected = check(MV_CC_EnumDevices(MV_USB_DEVICE | MV_GIGE_DEVICE, &m_devices), "EnumDevices") &&
         static_cast<unsigned int>(index) < m_devices.nDeviceNum &&
         check(MV_CC_CreateHandle(&m_handle, m_devices.pDeviceInfo[index]), "CreateHandle") &&
         check(MV_CC_OpenDevice(m_handle), "OpenDevice") &&
         check(MV_CC_StartGrabbing(m_handle), "StartGrabbing");
-    if (m_is_connected) m_index = index;
+    m_is_connected = is_connected || m_is_connected;
+    if (is_connected) {
+        m_index = index;
+        mConnectedDevices |= 0x0001 << m_index;
+        RCLCPP_INFO(rclcpp::get_logger("hik_camera"), "Usage index \"%d\" connected camera", index);
+    } 
     return m_is_connected;
+}
+
+bool HikDriver::connectDevice(const char* device_serial_number) {
+    if (m_is_connected && !strcmp(device_serial_number, getDeviceSerialNumber().c_str()))
+        return true;
+
+    void* handle;
+    MVCC_STRINGVALUE s;
+    bool is_connected;
+
+    check(MV_CC_EnumDevices(MV_USB_DEVICE | MV_GIGE_DEVICE, &m_devices), "EnumDevices");
+    for (int i = 0; i < m_devices.nDeviceNum; ++i) {
+        if (!MV_CC_IsDeviceAccessible(m_devices.pDeviceInfo[i], 1) ||
+            (0x0001 << i) & mConnectedDevices) continue;
+
+        is_connected = check(MV_CC_CreateHandle(&handle, m_devices.pDeviceInfo[i]), "CreateHande") &&
+            check(MV_CC_OpenDevice(handle), "OpenDevice") &&
+            check(MV_CC_GetStringValue(handle, "DeviceSerialNumber", &s), "DeviceSerialNumber");
+        if (strlen(s.chCurValue) != 0 && !strcmp(s.chCurValue, device_serial_number)) {
+            is_connected = (is_connected && check(MV_CC_StartGrabbing(handle), "StartGrabbing")) || m_is_connected;
+            m_is_connected = is_connected;
+            if (is_connected) {
+                m_index = i;
+                m_handle = std::move(handle);
+                mConnectedDevices |= 0x0001 << m_index;
+                std::bitset<8> bin(mConnectedDevices);
+                RCLCPP_INFO(rclcpp::get_logger("hik_camera"),
+                    "Usage device serial number \"%s\" connected camera", device_serial_number);
+                return true;
+            }
+        }
+        if (!is_connected) {
+            MV_CC_CloseDevice(m_handle);
+            MV_CC_DestroyHandle(m_handle);
+        }
+    }
+    return false;
 }
 
 void HikDriver::disconnectDevice() {
     MV_CC_StopGrabbing(m_handle);
     MV_CC_CloseDevice(m_handle);
     MV_CC_DestroyHandle(m_handle);
+    mConnectedDevices &= 0x1110 << m_index;
 }
 
 HikDeviceInfo HikDriver::getDeviceInfo(int index) const {
@@ -90,7 +146,8 @@ std::string HikDriver::getDeviceParamInfo() const {
     auto device_info = getDeviceInfo(m_index);
 
     oss << "\nParam Info: \n"
-        << "    index: " << m_index << "; " << to_string(device_info) << "\n"
+        << "    Device Serial Number: " << getDeviceSerialNumber() << "\n"
+        << "    Index: " << m_index << "; " << to_string(device_info) << "\n"
         << "    Exposure Time: " << to_string(v_et) << "\n"
         << "    Gain: " << to_string(v_g) << "\n";
 

@@ -44,6 +44,7 @@ void ArmorDetectorNode::declareParams() {
     model_path = ament_index_cpp::get_package_share_directory("armor_detector") + "/model/" + model_path;
     auto inference_driver = this->declare_parameter("inference_driver", "AUTO");
     auto c = this->declare_parameter("detect_color", "BLUE");
+    m_is_debug = this->declare_parameter("is_debug", true);
     RCLCPP_INFO(this->get_logger(), "model path: %s", model_path.c_str());
     RCLCPP_INFO(this->get_logger(), "target color: %s", c.c_str());
     if (inference_driver == "AUTO")
@@ -65,7 +66,7 @@ void ArmorDetectorNode::subImageCallback(const sensor_msgs::msg::Image::ConstSha
     m_armors_msg.header = img_msg->header;
 
     cv::Mat img = cv_bridge::toCvShare(img_msg, "rgb8")->image;
-    if (img.empty()) return;
+    if (img.empty()) return m_armors_pub->publish(m_armors_msg);
 
     auto s = this->now();
     std::vector<InferenceResult> results;
@@ -99,17 +100,19 @@ void ArmorDetectorNode::subImageCallback(const sensor_msgs::msg::Image::ConstSha
             if (!m_pnp_solver->pnpSolver(armor, img_points, rvec, tvec)) continue;
             armor.distance_to_center = m_pnp_solver->getDistance(rrect.center);
             // Draw armor in debug img
-            cv::line(img, img_points[0], img_points[2], cv::Scalar(255, 0, 0), 2);
-            cv::line(img, img_points[1], img_points[3], cv::Scalar(255, 0, 0), 2);
-            std::stringstream txt;
-            txt <<  "start latency: " 
-                << std::fixed << std::setprecision(2) 
-                << (this->now() - img_msg->header.stamp).seconds() * 1000
-                << "ms; infer latency: "
-                << std::fixed << std::setprecision(2) 
-                << inf_latency << "ms";
-            cv::putText(img, txt.str(), cv::Point(100, 150), 0, 1.0, cv::Scalar(255, 0, 0), 2);
-            cv::circle(img, m_cam_center, 3, cv::Scalar(255, 0, 0), -1);
+            if (m_is_debug) {
+                cv::line(img, img_points[0], img_points[2], cv::Scalar(255, 0, 0), 2);
+                cv::line(img, img_points[1], img_points[3], cv::Scalar(255, 0, 0), 2);
+                std::stringstream txt;
+                txt <<  "start latency: " 
+                    << std::fixed << std::setprecision(2) 
+                    << (this->now() - img_msg->header.stamp).seconds() * 1000
+                    << "ms; infer latency: "
+                    << std::fixed << std::setprecision(2) 
+                    << inf_latency << "ms";
+                cv::putText(img, txt.str(), cv::Point(100, 150), 0, 1.0, cv::Scalar(255, 0, 0), 2);
+                cv::circle(img, m_cam_center, 3, cv::Scalar(255, 0, 0), -1);
+            }
             // armor pose
             armor.pose.position.x = tvec.at<double>(0);
             armor.pose.position.y = tvec.at<double>(1);
@@ -121,7 +124,8 @@ void ArmorDetectorNode::subImageCallback(const sensor_msgs::msg::Image::ConstSha
     // Publish armors
     m_armors_pub->publish(m_armors_msg);
     // Publish debug img
-    m_result_img_pub.publish(cv_bridge::CvImage(img_msg->header, "rgb8", img).toImageMsg());
+    if (m_is_debug)
+        m_result_img_pub.publish(cv_bridge::CvImage(img_msg->header, "rgb8", img).toImageMsg());
 }
 
 void ArmorDetectorNode::orientationFromRvec(const cv::Mat& rvec, geometry_msgs::msg::Quaternion& q) {

@@ -34,6 +34,7 @@ private:
     // Publisher
     rclcpp::Publisher<auto_aim_interfaces::msg::Armors>::SharedPtr m_armors_pub;
     // Debug Publisher
+    bool m_is_debug;
     image_transport::Publisher m_result_img_pub;
 
     // Function

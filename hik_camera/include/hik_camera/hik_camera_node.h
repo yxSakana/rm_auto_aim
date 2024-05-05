@@ -18,7 +18,7 @@ class HikCameraNode: public rclcpp::Node {
 public:
     HikCameraNode(const rclcpp::NodeOptions& options);
 private:
-    HikDriver m_hik_driver;
+    std::unique_ptr<HikDriver> m_hik_driver;
     bool m_enable = true;
     image_transport::CameraPublisher m_camera_pub;
     rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr m_enable_srv;

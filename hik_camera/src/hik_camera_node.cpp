@@ -5,8 +5,7 @@
 
 namespace hik_camera {
 HikCameraNode::HikCameraNode(const rclcpp::NodeOptions& options)
-    : Node("hik_camera", options),
-      m_hik_driver(this->declare_parameter("camera_index", 0)) {
+    : Node("hik_camera", options) {
     m_camera_pub = image_transport::create_camera_publisher(
         this, "image_raw", rmw_qos_profile_default/*rmw_qos_profile_sensor_data*/);
     // Paraments
@@ -14,13 +13,16 @@ HikCameraNode::HikCameraNode(const rclcpp::NodeOptions& options)
     std::string camera_info_url = this->declare_parameter(
         "camera_info_url", "package://hik_camera/config/camera_info.yaml");
     this->declare_parameter("camera_frame", "camera_optical_frame");
+    this->declare_parameter("device_serial_number", "");
+    this->declare_parameter("camera_index", 0);
     this->declare_parameter<float>("exposure_time", 4000.0);
     this->declare_parameter<float>("gain", 15.0);
+
     // Service
     m_enable_srv = this->create_service<std_srvs::srv::SetBool>("hik_camera/enable", [this](
         const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
         std::shared_ptr<std_srvs::srv::SetBool::Response> response
-    )->void {
+    ) -> void {
         m_enable = request->data;
         response->success = true;
         const char* mess = request->data? "disenable hik camera": "enable hik camera";
@@ -43,12 +45,13 @@ HikCameraNode::HikCameraNode(const rclcpp::NodeOptions& options)
 }
 
 void HikCameraNode::initHikCamera() {
-    RCLCPP_INFO(this->get_logger(), "Hik device number: %d", m_hik_driver.getDeviceNumber());
-    if (m_hik_driver.isConnected()) {
-        m_hik_driver.setExposureTime(this->get_parameter("exposure_time").as_double());
-        m_hik_driver.setGain(this->get_parameter("gain").as_double());
-        std::string info = m_hik_driver.getDeviceParamInfo();
-        MV_CC_GetImageInfo(m_hik_driver.getHandle(), &m_hik_img_info);
+    if (!m_hik_driver) return;
+    RCLCPP_INFO(this->get_logger(), "Hik device number: %d", m_hik_driver->getDeviceNumber());
+    if (m_hik_driver->isConnected()) {
+        m_hik_driver->setExposureTime(this->get_parameter("exposure_time").as_double());
+        m_hik_driver->setGain(this->get_parameter("gain").as_double());
+        std::string info = m_hik_driver->getDeviceParamInfo();
+        MV_CC_GetImageInfo(m_hik_driver->getHandle(), &m_hik_img_info);
         m_image_msg.data.reserve(m_hik_img_info.nHeightMax * m_hik_img_info.nWidthMax * 3);
 
         RCLCPP_INFO_STREAM(this->get_logger(), info);
@@ -59,11 +62,18 @@ void HikCameraNode::initHikCamera() {
 }
 
 void HikCameraNode::core() {
-    while (!m_hik_driver.isConnected()) {
-        std::this_thread::sleep_for(std::chrono::seconds(2));
-        m_hik_driver.connectDevice(this->get_parameter("camera_index").as_int());
-        initHikCamera();
-    }
+    auto connectCamera = [this]() -> void {
+        while (!m_hik_driver || !m_hik_driver->isConnected()) {
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+            auto device_serial_number = this->get_parameter("device_serial_number").as_string();
+            m_hik_driver = !device_serial_number.empty()
+                ? std::make_unique<HikDriver>(device_serial_number.c_str())
+                : std::make_unique<HikDriver>(this->get_parameter("camera_index").as_int());
+            initHikCamera();
+        }
+    };
+
+    connectCamera();
     RCLCPP_INFO(this->get_logger(), "Pushing camera msg...");
  
     rclcpp::Time last_t = this->now();
@@ -77,16 +87,12 @@ void HikCameraNode::core() {
     m_camera_info_msg.header.frame_id = m_image_msg.header.frame_id =
         this->get_parameter("camera_frame").as_string();
     m_image_msg.encoding = "rgb8";
-    void* handle = m_hik_driver.getHandle();
+    void* handle = m_hik_driver->getHandle();
     while (rclcpp::ok()) {
         // check
         if (!m_enable) return;
-        while (!m_hik_driver.isConnected()) {
-            std::this_thread::sleep_for(std::chrono::seconds(2));
-            m_hik_driver.connectDevice(this->get_parameter("camera_index").as_int());
-            initHikCamera();
-        }
-        if (m_hik_driver.readImageData(out_frame, 1000)) {
+        connectCamera();
+        if (m_hik_driver->readImageData(out_frame, 1000)) {
             // hik sdk
             m_convert_param.pDstBuffer = m_image_msg.data.data();
             m_convert_param.nDstBufferSize = m_image_msg.data.size();

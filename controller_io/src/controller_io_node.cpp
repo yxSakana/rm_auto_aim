@@ -24,17 +24,26 @@ using Target = auto_aim_interfaces::msg::Target;
 
 ControllerIONode::ControllerIONode(const rclcpp::NodeOptions& options)
     : Node("controller_io", options) {
+    // Parameter
+    auto master_tracker_topic = this->declare_parameter("master_tracker_topic", "/armor_tracker");
+    auto slave_tracker_topic  = this->declare_parameter("slave_tracker_topic", "");
     m_gimbal_tf_broad = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
     // Subsciption
     m_serial_sub = this->create_subscription<Receive>("/custom_serial/receive", rclcpp::SensorDataQoS(), 
         std::bind(&ControllerIONode::serialHandle, this, std::placeholders::_1));
-    m_target_sub = this->create_subscription<Target>("/armor_tracker/target", rclcpp::SensorDataQoS(), 
+    m_target_sub = this->create_subscription<Target>(master_tracker_topic + "/target", rclcpp::SensorDataQoS(), 
         std::bind(&ControllerIONode::trackerCallback, this, std::placeholders::_1));
+    m_is_sentry = !slave_tracker_topic.empty();
+    m_target_slave_sub = !m_is_sentry
+        ? this->create_subscription<Target>(slave_tracker_topic + "/target", rclcpp::SensorDataQoS(), 
+            std::bind(&ControllerIONode::trackerCallback, this, std::placeholders::_1))
+        : nullptr;
     // Client
     m_serial_cli = this->create_client<SendPackage>("/custom_serial/send");
     // Armor detector target color client
     m_detect_color_cli = std::make_shared<rclcpp::AsyncParametersClient>(this,
-        this->declare_parameter("set_param_topic", "armor_detector_node"));
+        this->declare_parameter("armor_detector_name", "armor_detector_node"));
+ 
 
     // Visualization
     m_aim_marker.ns = "aim";
@@ -54,8 +63,7 @@ void ControllerIONode::serialHandle(const Receive::SharedPtr serial_msg) {
     if (serial_msg->id == mControllerId || serial_msg->id == mSlaveControllerId) {
         switch (serial_msg->func_code) {
             case mNeedUpdateTimestamp: {
-                uint64_t timestamp = std::chrono::duration_cast<
-                    std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+                uint64_t timestamp = static_cast<uint64_t>(this->now().nanoseconds());
                 auto request = std::make_shared<SendPackage::Request>();
                 request->func_code = mTimestampPackte;
                 request->id = serial_msg->id - 10;
@@ -70,7 +78,7 @@ void ControllerIONode::serialHandle(const Receive::SharedPtr serial_msg) {
                     RCLCPP_WARN(this->get_logger(), "service not available, waiting again...");
                 }
                 m_serial_cli->async_send_request(request);
-
+                RCLCPP_INFO(this->get_logger(), "Sync timerstmap");
                 break;
             }
             case mGimbalPose: {
@@ -78,10 +86,12 @@ void ControllerIONode::serialHandle(const Receive::SharedPtr serial_msg) {
                 std::memcpy(&gimbal_pose_pkt, serial_msg->data.data(), sizeof(GimbalPosePacket));
                 geometry_msgs::msg::TransformStamped t;
                 t.header.stamp = this->now();
-                // t.header.stamp = rclcpp::Time().from_nanoseconds(timestamp_nanoseconds);
+                // t.header.stamp = rclcpp::Time(static_cast<int64_t>(gimbal_pose_pkt.timestamp));
                 t.header.frame_id = "odom";
                 t.child_frame_id = serial_msg->id == mControllerId? "gimbal_link": "slave_gimbal_link";
                 tf2::Quaternion q(gimbal_pose_pkt.x, gimbal_pose_pkt.y, gimbal_pose_pkt.z, gimbal_pose_pkt.w);
+                // RCLCPP_INFO(this->get_logger(), "xyzw: %f %f %f %f", gimbal_pose_pkt.x, gimbal_pose_pkt.y,
+                // gimbal_pose_pkt.z, gimbal_pose_pkt.w);
                 t.transform.rotation = tf2::toMsg(q);
                 t.transform.translation.y = serial_msg->id == mControllerId? 0: 0.23;
                 m_gimbal_tf_broad->sendTransform(t);
@@ -123,6 +133,8 @@ void ControllerIONode::serialHandle(const Receive::SharedPtr serial_msg) {
 void ControllerIONode::trackerCallback(const Target::SharedPtr target_msg) {
     using namespace std::chrono_literals;
 
+    m_trakcer_state[static_cast<int>(target_msg->is_master)] = target_msg->tracking;
+
     AutoAimPacket packet;
     packet.x = target_msg->position.x;
     packet.y = target_msg->position.y;
@@ -139,18 +151,20 @@ void ControllerIONode::trackerCallback(const Target::SharedPtr target_msg) {
     packet.is_tracking = target_msg->tracking;
     packet.num = target_msg->num;
     packet.id = target_msg->id;
+    packet.is_follow = m_trakcer_state[0] ^ m_trakcer_state[1];
 
     auto request = std::make_shared<SendPackage::Request>();
     request->func_code = mAimPacket;
-    request->id = target_msg->is_master? mPCId: mPCId + 1;
+    request->id = !static_cast<uint8_t>(target_msg->is_master)/* ? mPCId: mPCId + 1 */;
     request->len = sizeof(AutoAimPacket);
     request->data.resize(request->len);
     std::memcpy(request->data.data(), &packet, request->len);
-
+    
     while (!m_serial_cli->wait_for_service(500ms)) RCLCPP_WARN(this->get_logger(), "wait service timeout!");
-    if (rclcpp::ok()) {
+    if (rclcpp::ok())
         m_serial_cli->async_send_request(request);
-    }
+    else
+        RCLCPP_ERROR(this->get_logger(), "rclcpp is not ok!");
 }
 
 void ControllerIONode::setParam(const rclcpp::Parameter& param) {
@@ -158,8 +172,6 @@ void ControllerIONode::setParam(const rclcpp::Parameter& param) {
     RCLCPP_WARN(get_logger(), "Service not ready, skipping parameter set");
     return;
   }
-//   auto p = param.get_value();
-//   RCLCPP_INFO(this->get_logger(), "type: %s; val: %s", param.get_type_name().c_str(), param.as_string().c_str());
   if (
     !m_set_param_future.valid() ||
     m_set_param_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
@@ -175,6 +187,7 @@ void ControllerIONode::setParam(const rclcpp::Parameter& param) {
         RCLCPP_INFO(get_logger(), "Successfully set detect_color to %s!", param.as_string().c_str());
         using namespace std::chrono_literals;
 
+        param.get_name();  // TODO: Sentry
         auto request = std::make_shared<SendPackage::Request>();
         request->func_code = mSetTargetColor;
         request->id = mPCId;
