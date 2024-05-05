@@ -70,7 +70,7 @@ fi
 # pull github repository
 info "-- Try pull repository from github repository..."
 if curl -m 2 -I https://github.com &>/dev/null; then
-  (cd ${RM_AUTO_AIM_DIR} && git pull && info "-- Pull github repository => OK") ||
+  (cd ${RM_AUTO_AIM_DIR} && timeout 3 git pull && info "-- Pull github repository => OK") ||
     warn "Failed to pull github repository"
 else
   warn "Can't connect github"
