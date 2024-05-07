@@ -73,19 +73,23 @@ bool HikDriver::connectDevice(const char* device_serial_number) {
 
     void* handle;
     MVCC_STRINGVALUE s;
-    bool is_connected;
+    bool is_connected = false;
 
     check(MV_CC_EnumDevices(MV_USB_DEVICE | MV_GIGE_DEVICE, &m_devices), "EnumDevices");
     for (int i = 0; i < m_devices.nDeviceNum; ++i) {
+        RCLCPP_WARN_EXPRESSION(rclcpp::get_logger("hik_camera"),
+            !MV_CC_IsDeviceAccessible(m_devices.pDeviceInfo[i], 1),
+            "Hik camera index %d is not accessible", i);
         if (!MV_CC_IsDeviceAccessible(m_devices.pDeviceInfo[i], 1) ||
             (0x0001 << i) & mConnectedDevices) continue;
-
-        is_connected = check(MV_CC_CreateHandle(&handle, m_devices.pDeviceInfo[i]), "CreateHande") &&
+        
+        bool is_opened = check(MV_CC_CreateHandle(&handle, m_devices.pDeviceInfo[i]), "CreateHande") &&
             check(MV_CC_OpenDevice(handle), "OpenDevice") &&
             check(MV_CC_GetStringValue(handle, "DeviceSerialNumber", &s), "DeviceSerialNumber");
-        if (strlen(s.chCurValue) != 0 && !strcmp(s.chCurValue, device_serial_number)) {
-            is_connected = (is_connected && check(MV_CC_StartGrabbing(handle), "StartGrabbing")) || m_is_connected;
-            m_is_connected = is_connected;
+        if (is_opened && strlen(s.chCurValue) != 0 &&
+                !strcmp(s.chCurValue, device_serial_number)) {
+            is_connected = check(MV_CC_StartGrabbing(handle), "StartGrabbing");
+            m_is_connected = is_connected || m_is_connected;
             if (is_connected) {
                 m_index = i;
                 m_handle = std::move(handle);
@@ -95,13 +99,13 @@ bool HikDriver::connectDevice(const char* device_serial_number) {
                     "Usage device serial number \"%s\" connected camera", device_serial_number);
                 return true;
             }
-        }
+        } 
         if (!is_connected) {
-            MV_CC_CloseDevice(m_handle);
-            MV_CC_DestroyHandle(m_handle);
+            MV_CC_CloseDevice(handle);
+            MV_CC_DestroyHandle(handle);
         }
     }
-    return false;
+    return is_connected;
 }
 
 void HikDriver::disconnectDevice() {

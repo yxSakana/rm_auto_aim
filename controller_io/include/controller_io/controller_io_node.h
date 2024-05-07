@@ -37,7 +37,8 @@ private:
     // Client
     rclcpp::Client<custom_serial_interfaces::srv::SendPackage>::SharedPtr m_serial_cli;
     // Armor detector target color, Armro trakcer pattem client
-    rclcpp::AsyncParametersClient::SharedPtr m_detect_color_cli;
+    std::vector<rclcpp::AsyncParametersClient::SharedPtr> m_detect_color_clis;
+    rclcpp::AsyncParametersClient::SharedPtr m_slave_detect_color_cli;
     // rclcpp::AsyncParametersClient::SharedPtr
     ResultFuturePtr m_set_param_future;
     // 
@@ -57,7 +58,13 @@ private:
 
     void trackerCallback(const auto_aim_interfaces::msg::Target::SharedPtr target_msg);
 
-    void setParam(const rclcpp::Parameter& param);
+    void setDetectorColor(const rclcpp::Parameter& param);
+
+    void setParam(const rclcpp::AsyncParametersClient::SharedPtr parameters_cli,
+                  const rclcpp::Parameter& param,
+                  std::function<void(void)> callback,
+                  uint8_t id);
+    // void setParam(const rclcpp::Parameter& param);
 };
 }
 

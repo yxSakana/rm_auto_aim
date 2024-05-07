@@ -13,7 +13,6 @@ struct AutoAimPacket {
     uint8_t id;
     uint8_t delay;
     uint8_t is_tracking;
-    uint8_t is_follow;
 };
 
 struct GimbalPosePacket {

@@ -20,6 +20,7 @@
 
 namespace armor_auto_aim {
 class ArmorDetectorNode: public rclcpp::Node {
+    using ResultFuturePtr = std::shared_future<std::vector<rclcpp::Parameter>>;
 public:
     explicit ArmorDetectorNode(const rclcpp::NodeOptions& options);
 private:

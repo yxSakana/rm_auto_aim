@@ -1,18 +1,18 @@
 hero:
   xyz: "\"0.00  0.10 -0.40\""
-  rpy: "\"0.00  0.00  0.00\""
+  rpy: "\"0.00  0.00  0.008\""
 infantry_CS004:
   xyz: "\"0.00  0.08  0.10\""
   rpy: "\"0.00  0.00  0.008\""
 infantry_CS016:
-  xyz: "\"0.00  0.13  0.05\""
+  xyz: "\"0.00  0.09  0.03\""
   rpy: "\"0.00  0.00  0.00\""
 sentry:
     # gimbal 2 camera
-    gimbal2camera_xyz:        "\"0.0 0.0 0.0\""
-    gimbal2camera_rpy:        "\"0.0 0.0 0.0\""
-    gimbal2slave_camera_xyz:  "\"0.0 0.0 0.0\""
-    gimbal2slave_camera_rpy:  "\"0.0 0.0 0.0\""
+    gimbal2camera_xyz:        "\"0.0 0.005 -0.05\""
+    gimbal2camera_rpy:        "\"0.0 0.000  0.00\""
+    gimbal2slave_camera_xyz:  "\"0.0 0.150 -0.35\""
+    gimbal2slave_camera_rpy:  "\"0.0 0.000  0.00\""
 
 test:
   xyz: "\"0.00  0.13  0.05\""
