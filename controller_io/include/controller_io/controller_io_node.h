@@ -36,15 +36,14 @@ private:
     rclcpp::Subscription<auto_aim_interfaces::msg::Target>::SharedPtr m_target_slave_sub;
     // Client
     rclcpp::Client<custom_serial_interfaces::srv::SendPackage>::SharedPtr m_serial_cli;
-    // Armor detector target color, Armro trakcer pattem client
+    // Armor detector target color, Armro trakcer pattem client. And the reuslt future
+    // The client and future are a pair.
     std::vector<rclcpp::AsyncParametersClient::SharedPtr> m_detect_color_clis;
-    rclcpp::AsyncParametersClient::SharedPtr m_slave_detect_color_cli;
-    // rclcpp::AsyncParametersClient::SharedPtr
-    ResultFuturePtr m_set_param_future;
+    std::vector<ResultFuturePtr> m_set_param_futures;
     // 
     std::array<bool, 2> m_trakcer_state;
     uint8_t m_is_detector_configured;
-    bool m_is_sentry;
+    // bool m_is_sentry;
 
     // visualization
     visualization_msgs::msg::Marker m_aim_marker;
@@ -60,10 +59,9 @@ private:
 
     void setDetectorColor(const rclcpp::Parameter& param);
 
-    void setParam(const rclcpp::AsyncParametersClient::SharedPtr parameters_cli,
+    void setParam(int index,
                   const rclcpp::Parameter& param,
-                  std::function<void(void)> callback,
-                  uint8_t id);
+                  std::function<void(void)> callback);
     // void setParam(const rclcpp::Parameter& param);
 };
 }

@@ -36,17 +36,17 @@ ControllerIONode::ControllerIONode(const rclcpp::NodeOptions& options)
         std::bind(&ControllerIONode::serialHandle, this, std::placeholders::_1));
     m_target_sub = this->create_subscription<Target>(master_tracker_topic + "/target", rclcpp::SensorDataQoS(), 
         std::bind(&ControllerIONode::trackerCallback, this, std::placeholders::_1));
-    m_is_sentry = !slave_tracker_topic.empty();
-    RCLCPP_INFO_EXPRESSION(this->get_logger(), m_is_sentry, "robot is sentry");
-    m_target_slave_sub = m_is_sentry
+    m_target_slave_sub = !slave_tracker_topic.empty() // Robot is "Sentry" if "slave_tracker_topic" is not a empty string.
         ? this->create_subscription<Target>(slave_tracker_topic + "/target", rclcpp::SensorDataQoS(), 
             std::bind(&ControllerIONode::trackerCallback, this, std::placeholders::_1))
         : nullptr;
     // Client
     m_serial_cli = this->create_client<SendPackage>("/custom_serial/send");
-    for (size_t i = 0; i < color_notify.size(); ++i)
+    for (size_t i = 0; i < color_notify.size(); ++i) {
         m_detect_color_clis.push_back(std::make_shared<rclcpp::AsyncParametersClient>(this, color_notify[i]));
-    RCLCPP_ERROR(this->get_logger(), "len: %ld", color_notify.size());
+        m_set_param_futures.emplace_back(ResultFuturePtr());
+    }
+    // for (size_t i = 0; i < )
 
     // Visualization
     m_aim_marker.ns = "aim";
@@ -155,7 +155,7 @@ void ControllerIONode::trackerCallback(const Target::SharedPtr target_msg) {
 
     auto request = std::make_shared<SendPackage::Request>();
     request->func_code = mAimPacket;
-    request->id = !static_cast<uint8_t>(target_msg->is_master)/* ? mPCId: mPCId + 1 */;
+    request->id = !static_cast<uint8_t>(target_msg->is_master);
     request->len = sizeof(AutoAimPacket);
     request->data.resize(request->len);
     std::memcpy(request->data.data(), &packet, request->len);
@@ -172,7 +172,7 @@ void ControllerIONode::setDetectorColor(const rclcpp::Parameter& param) {
     for (size_t i = 0; i < names.size(); ++i) {
         RCLCPP_INFO(this->get_logger(), "node name: %s", names[i].c_str());
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        setParam(m_detect_color_clis[i], param, [this, i]() -> void {
+        setParam(i, param, [this, i, names]() -> void {
             auto request = std::make_shared<SendPackage::Request>();
             request->func_code = mSetTargetColor;
             request->id = mPCId + i;
@@ -182,57 +182,48 @@ void ControllerIONode::setDetectorColor(const rclcpp::Parameter& param) {
             while (!m_serial_cli->wait_for_service(500ms)) RCLCPP_WARN(this->get_logger(), "wait service timeout!");
             if (rclcpp::ok()) {
                 m_serial_cli->async_send_request(request);
-                RCLCPP_INFO(this->get_logger(), "Set color to notify controller (id: %d)!", mPCId + i + 10);
+                RCLCPP_INFO(this->get_logger(), "Set %s color to notify controller (id: %d)!", 
+                    names[i].c_str(), mPCId + int(i) + 10);
             } else {
                 RCLCPP_WARN(this->get_logger(), "rclcpp is not ok!");
             }
-        }, i);
+        });
     }
 }
 
 void ControllerIONode::setParam(
-        const rclcpp::AsyncParametersClient::SharedPtr parameters_cli,
-        const rclcpp::Parameter& param,
-        const std::function<void(void)> callback,
-        uint8_t id) {
-    if (!parameters_cli->service_is_ready()) {
+        int index, const rclcpp::Parameter& param,
+        const std::function<void(void)> callback) {
+    auto& cli = m_detect_color_clis[index];
+    auto& future = m_set_param_futures[index];
+    auto node_name = this->get_parameter("color_notify").as_string_array()[index].c_str();
+
+    if (!cli->service_is_ready()) {
         RCLCPP_WARN_THROTTLE(get_logger(), *(this->get_clock()), 200, "Service not ready, skipping parameter set");
         return;
     }
+
     using namespace std::chrono_literals;
-    RCLCPP_INFO(get_logger(),
-        "Setting %s to %s... (id: %d)", param.get_name().c_str(),param.as_string().c_str(), id);
-    parameters_cli->set_parameters(
-        { param }, [this, param, callback](const ResultFuturePtr& results) -> void {
-            for (const auto& result: results.get()) {
-                if (!result.successful) {
-                    RCLCPP_ERROR(get_logger(), "Failed to set parameter: %s", result.reason.c_str());
-                    return;
+    if (!future.valid() ||
+        future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+        RCLCPP_INFO(get_logger(),
+            "Setting %s %s to %s...", param.get_name().c_str(),
+            node_name, param.as_string().c_str());
+        future = cli->set_parameters(
+            { param }, [this, param, node_name, callback](const ResultFuturePtr& results) -> void {
+                for (const auto& result: results.get()) {
+                    if (!result.successful) {
+                        RCLCPP_ERROR(get_logger(), "Failed to set parameter: %s", result.reason.c_str());
+                        return;
+                    }
                 }
-            }
-            RCLCPP_INFO(get_logger(), "Successfully set %s to %s!",
-                param.get_name().c_str(), param.as_string().c_str());
-            callback();
-    });
-    // if (!m_set_param_future.valid() ||
-    //     m_set_param_future.wait_for(std::chrono::milliseconds(200)) == std::future_status::ready) {
-    //     RCLCPP_INFO(get_logger(),
-    //         "Setting %s to %s... (id: %d)", param.get_name().c_str(),param.as_string().c_str(), id);
-    //     m_set_param_future = parameters_cli->set_parameters(
-    //         { param }, [this, param, callback](const ResultFuturePtr& results) -> void {
-    //             for (const auto& result: results.get()) {
-    //                 if (!result.successful) {
-    //                     RCLCPP_ERROR(get_logger(), "Failed to set parameter: %s", result.reason.c_str());
-    //                     return;
-    //                 }
-    //             }
-    //             RCLCPP_INFO(get_logger(), "Successfully set %s to %s!",
-    //                 param.get_name().c_str(), param.as_string().c_str());
-    //             callback();
-    //     });
-    // } else {
-    //     RCLCPP_WARN(this->get_logger(), "param future is error (%d)", id);
-    // }
+                RCLCPP_INFO(get_logger(), "Successfully set %s %s to %s!",
+                    param.get_name().c_str(), node_name, param.as_string().c_str());
+                callback();
+        });
+    } else {
+        RCLCPP_WARN(this->get_logger(), "param future is error (%d)", index);
+    }
 }
 
 // void ControllerIONode::setParam(const rclcpp::Parameter& param) {
