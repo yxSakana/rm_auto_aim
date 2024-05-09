@@ -3,8 +3,8 @@
     camera_info_url: package://auto_aim/config/CS-016-8mm.yaml
     camera_frame: "camera_optical_frame" 
     camera_index: 0
-    exposure_time: 8000.0
-    gain: 16.77
+    exposure_time: 6000.0
+    gain: 16.98
 
 /armor_detector_node:
   ros__parameters:
@@ -12,6 +12,8 @@
     inference_driver: "AUTO"
     detect_color: "BLUE"
     is_debug: true
+    is_capture_raw_image: false
+    is_capture_result_image: false
 
 /armor_tracker_node:
   ros__parameters:
@@ -22,13 +24,14 @@
       q_diagonal: [0.005, 0.0001, 0.002, 0.001, 0.08, 0.0005, 0.001, 0.001, 0.00001] # x vx y vy z vz yaw v_yaw r
       r_diagonal: [2.5, 0.8, 0.8, 0.4]  # x y z yaw
     tracker:
-      max_match_distance: 0.5
+      max_match_distance: 1.5
       max_match_yaw: 1.0
       tracking_threshold: 5
       lost_threshold: 30
 
 /controller_io_node:
   ros__parameters:
+    color_notify: ["/armor_detector_node"]
     master_tracker_topic: "/armor_tracker"
     slave_tracker_topic: ""
 

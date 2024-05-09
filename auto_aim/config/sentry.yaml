@@ -3,7 +3,7 @@
     camera_info_url: package://auto_aim/config/CS-016-6mm-M.yaml
     camera_frame: "camera_optical_frame" 
     device_serial_number: "DA2849907"
-    exposure_time: 6000.0
+    exposure_time: 4000.0
     gain: 16.98
 
 /slave/hik_camera_node:
@@ -11,7 +11,7 @@
     camera_info_url: package://auto_aim/config/CS-016-6mm-S.yaml
     camera_frame: "slave_camera_optical_frame"
     device_serial_number: "DA2849978"
-    exposure_time: 6000.0
+    exposure_time: 4000.0
     gain: 16.98
 
 /master/armor_detector_node:
@@ -20,6 +20,8 @@
     inference_driver: "CPU"
     detect_color: "BLUE"
     is_debug: true
+    is_capture_raw_image: false
+    is_capture_result_image: false
 
 /slave/armor_detector_node:
   ros__parameters:
@@ -27,6 +29,8 @@
     inference_driver: "GPU"
     detect_color: "BLUE"
     is_debug: true
+    is_capture_raw_image: false
+    is_capture_result_image: false
 
 /master/armor_tracker_node:
   ros__parameters:
@@ -51,7 +55,7 @@
       q_diagonal: [0.005, 0.01, 0.002, 0.001, 0.08, 0.005, 0.001, 0.001, 0.00001] # x vx y vy z vz yaw v_yaw r
       r_diagonal: [0.3, 0.25, 0.16, 0.04]  # x y z yaw
     tracker:
-      max_match_distance: 0.5
+      max_match_distance: 1.5
       max_match_yaw: 1.0
       tracking_threshold: 5
       lost_threshold: 30

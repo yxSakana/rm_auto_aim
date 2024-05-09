@@ -12,12 +12,13 @@
     inference_driver: "AUTO"
     detect_color: "BLUE"
     is_debug: true
+    is_capture_raw_image: false
+    is_capture_result_image: false
 
 /armor_tracker_node:
   ros__parameters:
     odom_frame: "odom"
     is_debug: true
-
     ekf:
       #              x     vx     y   vy     z      vz     yaw   vyaw    r
       q_diagonal: [0.005, 0.01, 0.002, 0.008, 0.08, 0.005, 0.001, 0.001, 0.00001] # x vx y vy z vz yaw v_yaw r
@@ -30,6 +31,7 @@
 
 /controller_io_node:
   ros__parameters:
+    color_notify: ["/armor_detector_node"]
     master_tracker_topic: "/armor_tracker"
     slave_tracker_topic: ""
 
