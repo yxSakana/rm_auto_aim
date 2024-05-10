@@ -1,16 +1,6 @@
 ## Use `Docker`
 
 ```shell
-# pull dokcer images
-docker pull yxsakana/rm_auto_aim:latest
-
-# OR Use Dockerfile to build images
-docker build \
-    --network=host \
-    --build-arg https_proxy="127.0.0.1:7890" \
-    --build-arg HTTPS_PROXY="127.0.0.1:7890" \
-    -t rm_auto_aim:<TAG> .
-
 # run
 docker run \
     --network host \

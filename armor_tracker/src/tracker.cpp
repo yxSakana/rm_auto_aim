@@ -54,7 +54,7 @@ void TrackerStateMachine::update(bool detector_result) {
 void Tracker::initTracker(const auto_aim_interfaces::msg::Armors::SharedPtr armors_msg) {
     if (armors_msg->armors.empty() || ekf == nullptr)
         return;
-    // 选择要跟踪的装甲板(优先选择距离相机光心最近的)(en: Select tracked armor)
+    // Select tracked armor(优先选择距离相机光心最近的)
     double min_distance = DBL_MAX;
     tracked_armor = armors_msg->armors[0];
     for (const auto& armor: armors_msg->armors) {
