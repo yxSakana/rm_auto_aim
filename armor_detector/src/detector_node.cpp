@@ -1,6 +1,7 @@
 #include <armor_detector/detector_node.h>
 
 // std
+#include <filesystem>
 #include <sstream>
 #include <algorithm>
 #include <functional>
@@ -44,6 +45,8 @@ void ArmorDetectorNode::declareParams() {
     model_path = ament_index_cpp::get_package_share_directory("armor_detector") + "/model/" + model_path;
     auto inference_driver = this->declare_parameter("inference_driver", "AUTO");
     auto c = this->declare_parameter("detect_color", "BLUE");
+    this->declare_parameter("is_capture_result_image", false);
+    this->declare_parameter("is_capture_raw_image", false);
     m_is_debug = this->declare_parameter("is_debug", true);
     RCLCPP_INFO(this->get_logger(), "model path: %s", model_path.c_str());
     RCLCPP_INFO(this->get_logger(), "target color: %s", c.c_str());
@@ -57,6 +60,29 @@ void ArmorDetectorNode::subCamInfoCallback(const sensor_msgs::msg::CameraInfo::C
     m_pnp_solver = std::make_unique<PnPSolver>(cam_info->k, cam_info->d);
     m_cam_center = cv::Point2f(cam_info->k[2], cam_info->k[5]);
     m_cam_info_sub.reset();
+
+    namespace fs = std::filesystem;
+    auto timestamp = std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
+    auto path = "runtime_log/video" + std::string(this->get_namespace()) + "/" + timestamp;
+    RCLCPP_ERROR_STREAM_EXPRESSION(this->get_logger(),
+        this->get_parameter("is_capture_raw_image").as_bool() ||
+        this->get_parameter("is_capture_result_image").as_bool(),
+        "Save video path: " << path);
+
+    if (this->get_parameter("is_capture_raw_image").as_bool()) {
+        if (!fs::exists(path)) fs::create_directories(path);
+        m_raw_img_writer = std::make_shared<cv::VideoWriter>(
+            path + "/raw_image.mp4",
+            cv::VideoWriter::fourcc('a', 'v', 'c', '1'),
+            30, cv::Size(cam_info->width, cam_info->height));
+    }
+    if (this->get_parameter("is_capture_result_image").as_bool()) {
+        if (!fs::exists(path)) fs::create_directories(path);
+        m_result_img_writer = std::make_shared<cv::VideoWriter>(
+            path + "/result_image.mp4",
+            cv::VideoWriter::fourcc('a', 'v', 'c', '1'),
+            30, cv::Size(cam_info->width, cam_info->height));
+    }
 }
 
 void ArmorDetectorNode::subImageCallback(const sensor_msgs::msg::Image::ConstSharedPtr img_msg) {
@@ -67,6 +93,12 @@ void ArmorDetectorNode::subImageCallback(const sensor_msgs::msg::Image::ConstSha
 
     cv::Mat img = cv_bridge::toCvShare(img_msg, "rgb8")->image;
     if (img.empty()) return m_armors_pub->publish(m_armors_msg);
+    // Capture
+    if (m_raw_img_writer) {
+        cv::Mat img_bgr;
+        cv::cvtColor(img, img_bgr, cv::COLOR_RGB2BGR);
+        m_raw_img_writer->write(img_bgr);
+    }
 
     auto s = this->now();
     std::vector<InferenceResult> results;
@@ -91,12 +123,17 @@ void ArmorDetectorNode::subImageCallback(const sensor_msgs::msg::Image::ConstSha
             auto ratio = std::max(rrect.size.height, rrect.size.width) /
                                 std::min(rrect.size.height, rrect.size.width);
 //             RCLCPP_INFO(this->get_logger(), "ratio: %f", ratio);
-            armor.type  = ratio < 3.0f?  "SMALL":"LARGE";
+            armor.type  = ratio < 2.9f?  "SMALL":"LARGE";
             // {{{
             if (armor.type == "LARGE" &&
                   (armor.number == 0 || armor.number == 6) && 
                   (armor.color == "BLUE")) continue;
             // }}}
+            if (armor.number == 1) armor.type = "LARGE";
+            else if (armor.number == 2 || armor.number == 3 ||
+                    armor.number == 4 || armor.number == 5)
+                armor.type = "SMALL";
+
             if (!m_pnp_solver->pnpSolver(armor, img_points, rvec, tvec)) continue;
             armor.distance_to_center = m_pnp_solver->getDistance(rrect.center);
             // Draw armor in debug img
@@ -126,6 +163,11 @@ void ArmorDetectorNode::subImageCallback(const sensor_msgs::msg::Image::ConstSha
     // Publish debug img
     if (m_is_debug)
         m_result_img_pub.publish(cv_bridge::CvImage(img_msg->header, "rgb8", img).toImageMsg());
+    if (m_result_img_writer) {
+        cv::Mat img_bgr;
+        cv::cvtColor(img, img_bgr, cv::COLOR_RGB2BGR);
+        m_result_img_writer->write(img_bgr);
+    }
 }
 
 void ArmorDetectorNode::orientationFromRvec(const cv::Mat& rvec, geometry_msgs::msg::Quaternion& q) {

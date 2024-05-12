@@ -20,7 +20,6 @@
 
 namespace armor_auto_aim {
 class ArmorDetectorNode: public rclcpp::Node {
-    using ResultFuturePtr = std::shared_future<std::vector<rclcpp::Parameter>>;
 public:
     explicit ArmorDetectorNode(const rclcpp::NodeOptions& options);
 private:
@@ -37,6 +36,8 @@ private:
     // Debug Publisher
     bool m_is_debug;
     image_transport::Publisher m_result_img_pub;
+    std::shared_ptr<cv::VideoWriter> m_raw_img_writer;
+    std::shared_ptr<cv::VideoWriter> m_result_img_writer;
 
     // Function
     void declareParams();

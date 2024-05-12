@@ -40,6 +40,11 @@
       #              x     vx     y   vy     z      vz     yaw   vyaw    r
       q_diagonal: [0.005, 0.01, 0.002, 0.001, 0.08, 0.005, 0.001, 0.001, 0.00001] # x vx y vy z vz yaw v_yaw r
       r_diagonal: [0.3, 0.25, 0.16, 0.04]  # x y z yaw
+      s2qxyz: 0.28
+      s2qyaw: 5.0
+      s2qr: 80.0
+      r_xyz_factor: 4e-4
+      r_yaw: 5e-3
     tracker:
       max_match_distance: 0.5
       max_match_yaw: 1.0
@@ -54,6 +59,11 @@
       #              x     vx     y   vy     z      vz     yaw   vyaw    r
       q_diagonal: [0.005, 0.01, 0.002, 0.001, 0.08, 0.005, 0.001, 0.001, 0.00001] # x vx y vy z vz yaw v_yaw r
       r_diagonal: [0.3, 0.25, 0.16, 0.04]  # x y z yaw
+      s2qxyz: 0.28
+      s2qyaw: 5.0
+      s2qr: 80.0
+      r_xyz_factor: 4e-4
+      r_yaw: 5e-3
     tracker:
       max_match_distance: 1.5
       max_match_yaw: 1.0

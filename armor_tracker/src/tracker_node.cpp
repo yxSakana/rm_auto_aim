@@ -17,6 +17,11 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions& options)
     int lt = this->declare_parameter("tracker.lost_threshold", 30);
     double mmd = this->declare_parameter("tracker.max_match_distance", 0.5);
     double mmy = this->declare_parameter("tracker.max_match_yaw", 1.0);
+    this->declare_parameter("s2qxyz", 0.08);
+    this->declare_parameter("s2qyaw", 5.0);
+    this->declare_parameter("s2qr", 80.0);
+    this->declare_parameter("r_xyz_factor", 4e-4);
+    this->declare_parameter("r_yaw", 5e-3);
     // set trakcer param
     m_tracker.setMatchDistance(mmd);
     m_tracker.setMatchYaw(mmy);
@@ -201,17 +206,17 @@ void ArmorTrackerNode::initEkf() {
         return h;
     };
     auto update_Q = [this]()->Eigen::MatrixXd {
-        if (m_tracker.ekf->getQ().size() == 0) {
-            Eigen::DiagonalMatrix<double, 9> Q;
-            auto q_dio = this->get_parameter("ekf.q_diagonal").as_double_array();
-            Q.diagonal() = Eigen::Map<Eigen::VectorXd>(q_dio.data(), 9, 1);
-            return Q;
-        } else {
-            return m_tracker.ekf->getQ();
-        }
-        double s2qxyz = 0.05,
-               s2qyaw = 4.0,
-               s2qr   = 80.0;
+        // if (m_tracker.ekf->getQ().size() == 0) {
+        //     Eigen::DiagonalMatrix<double, 9> Q;
+        //     auto q_dio = this->get_parameter("ekf.q_diagonal").as_double_array();
+        //     Q.diagonal() = Eigen::Map<Eigen::VectorXd>(q_dio.data(), 9, 1);
+        //     return Q;
+        // } else {
+        //     return m_tracker.ekf->getQ();
+        // }
+        double s2qxyz = this->get_parameter("s2qxyz").as_double();
+        double s2qyaw = this->get_parameter("s2qyaw").as_double();
+        double s2qr   = this->get_parameter("s2qr").as_double();
         Eigen::MatrixXd q(9, 9);
         double t       = dt,
                x       = s2qxyz,
@@ -237,16 +242,16 @@ void ArmorTrackerNode::initEkf() {
         return q;
     };
     auto update_R = [this](const Eigen::MatrixXd& z)->Eigen::MatrixXd {
-        if (m_tracker.ekf->getR().size() == 0) {
-            Eigen::DiagonalMatrix<double, 4> R;
-            auto r_dio = this->get_parameter("ekf.r_diagonal").as_double_array();
-            R.diagonal() = Eigen::Map<Eigen::Vector4d>(r_dio.data(), 4, 1);
-            return R;
-        } else {
-            return m_tracker.ekf->getR();
-        }
-        double r_xyz_factor = 4e-4,
-               r_yaw = 4e-4;
+        // if (m_tracker.ekf->getR().size() == 0) {
+        //     Eigen::DiagonalMatrix<double, 4> R;
+        //     auto r_dio = this->get_parameter("ekf.r_diagonal").as_double_array();
+        //     R.diagonal() = Eigen::Map<Eigen::Vector4d>(r_dio.data(), 4, 1);
+        //     return R;
+        // } else {
+        //     return m_tracker.ekf->getR();
+        // }
+        double r_xyz_factor = this->get_parameter("r_xyz_factor").as_double();
+        double r_yaw = this->get_parameter("r_yaw").as_double();
         Eigen::DiagonalMatrix<double, 4> r;
         double x = r_xyz_factor;
         r.diagonal() << abs(x * z(0)), abs(x * z(1)), abs(x * z(2)), r_yaw;

@@ -44,7 +44,7 @@ def generate_launch_description():
         output="both",
         on_exit=Shutdown())
     delay_armor_tracker_node = TimerAction(
-        period=2.5,
+        period=1.5,
         actions=[armor_tracker_node]
     )
     return LaunchDescription([
