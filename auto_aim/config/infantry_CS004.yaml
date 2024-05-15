@@ -31,7 +31,7 @@
 
     tracker:
       max_match_distance: 1.5
-      max_match_yaw: 1.0
+      max_match_yaw: 0.5
       tracking_threshold: 5
       lost_threshold: 30
 

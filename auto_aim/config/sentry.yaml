@@ -53,7 +53,7 @@
 
 /slave/armor_tracker_node:
   ros__parameters:
-    odom_frame: "odom"
+    odom_frame: "slave_odom"
     is_debug: true
     ekf:
       #              x     vx     y   vy     z      vz     yaw   vyaw    r

@@ -74,6 +74,7 @@ void Tracker::updateTracker(const auto_aim_interfaces::msg::Armors::SharedPtr ar
     // prior
     bool is_matched = false;
     const auto_aim_interfaces::msg::Armor* same_id_armor;
+    std::vector<auto_aim_interfaces::msg::Armor> same_id_armors;
     int same_id_armor_count = 0;
     m_target_predict_state = ekf->update();
     // xxx
@@ -86,6 +87,10 @@ void Tracker::updateTracker(const auto_aim_interfaces::msg::Armors::SharedPtr ar
         Eigen::Vector3d measurement_position_vec;
         Eigen::Vector3d predicted_position_vec(getArmorPositionFromState(m_target_predict_state));
         for (const auto& armor: armors_msg->armors) {
+            if (armor.number != m_tracked_id) continue;
+            same_id_armor = &armor;
+            same_id_armor_count++;
+            same_id_armors.push_back(armor);
             auto const& p = armor.world_pose.position;
             measurement_position_vec = Eigen::Vector3d(p.x, p.y, p.z);
             double position_difference = (predicted_position_vec - measurement_position_vec).norm();
@@ -94,43 +99,71 @@ void Tracker::updateTracker(const auto_aim_interfaces::msg::Armors::SharedPtr ar
                 yaw_difference = std::abs(m_target_predict_state[6] - orientationToYaw(armor.world_pose.orientation));
                 tracked_armor = armor;
             }
-            // {{{
-            if ((armor.number == 0 || armor.number == 6) &&
-                position_difference < m_max_match_distance+1.0 &&
-                m_is_complex_pattern == false) {
-                m_is_complex_pattern = true;
-                switch (m_comlex_pattern_mode) {
-                    case 1: {
-                        m_armor_num = 3;
-                        break;
-                    }
-                    case 2: {
-                        m_armor_num = 4;
-                        break;
-                    }
-                }
-            }
-            /// }}}
-            bool is_same = m_is_complex_pattern
-                ? position_difference < m_max_match_distance
-                : armor.number == m_tracked_id;
-            if (is_same) {
-                same_id_armor = &armor;
-                same_id_armor_count++;
-            }
+
+            // auto const& p = armor.world_pose.position;
+            // measurement_position_vec = Eigen::Vector3d(p.x, p.y, p.z);
+            // double position_difference = (predicted_position_vec - measurement_position_vec).norm();
+            // if (position_difference < min_position_difference) {
+            //     min_position_difference = position_difference;
+            //     yaw_difference = std::abs(m_target_predict_state[6] - orientationToYaw(armor.world_pose.orientation));
+            //     tracked_armor = armor;
+            // }
+            // // {{{
+            // if ((armor.number == 0 || armor.number == 6) &&
+            //     position_difference < m_max_match_distance+1.0 &&
+            //     m_is_complex_pattern == false) {
+            //     m_is_complex_pattern = true;
+            //     switch (m_comlex_pattern_mode) {
+            //         case 1: {
+            //             m_armor_num = 3;
+            //             break;
+            //         }
+            //         case 2: {
+            //             m_armor_num = 4;
+            //             break;
+            //         }
+            //     }
+            // }
+            // /// }}}
+            // bool is_same = m_is_complex_pattern
+            //     ? position_difference < m_max_match_distance
+            //     : armor.number == m_tracked_id;
+            // if (is_same) {
+            //     same_id_armor = &armor;
+            //     same_id_armor_count++;
+            //     same_id_armors.push_back(armor);
+            // }
         }
         // 后验及装甲板跳变处理
+        if (same_id_armor_count >= 1) {
+            for (const auto& armor: same_id_armors) {
+                double yd = std::abs(m_target_predict_state[6] - orientationToYaw(armor.world_pose.orientation));
+                if (yd < yaw_difference) {
+                    yaw_difference = yd;
+                    // same_id_armor = &armor;
+                }
+            }
+        }
         if (min_position_difference < m_max_match_distance &&
             yaw_difference < m_max_match_yaw) {
             is_matched = true;
             auto const& p = tracked_armor.world_pose.position;
             measurement = Eigen::Vector4d(p.x, p.y, p.z, orientationToYaw(tracked_armor.world_pose.orientation));
             m_target_predict_state = ekf->predict(measurement);
-        } else if (same_id_armor_count == 1 && yaw_difference > m_max_match_yaw) {
+        } else if (same_id_armor_count >= 1 && yaw_difference > m_max_match_yaw) {
             handleArmorJump(*same_id_armor);
         } else {
-            RCLCPP_WARN(rclcpp::get_logger("armor_tracker"), "No matched armor! %lf > %lf(%lf)",
+            RCLCPP_WARN_EXPRESSION(rclcpp::get_logger("armor_tracker"), 
+                min_position_difference > m_max_match_distance && same_id_armor_count != 0,
+                "No matched armor(because Position)! %lf > %lf(%lf)",
                 min_position_difference, m_max_match_distance, min_position_difference - m_max_match_distance);
+            RCLCPP_WARN_EXPRESSION(rclcpp::get_logger("armor_tracker"), 
+                yaw_difference > m_max_match_yaw && same_id_armor_count != 0,
+                "No matched armor(because Yaw)! %lf > %lf(%lf)",
+                yaw_difference, m_max_match_yaw, yaw_difference - m_max_match_yaw);
+            RCLCPP_WARN_EXPRESSION(rclcpp::get_logger("armor_tracker"), 
+                same_id_armor_count != 1,
+                "No matched armor(because same count)! %d", same_id_armor_count);
         }
     }
     if (m_target_predict_state(8) < 0.12) {
