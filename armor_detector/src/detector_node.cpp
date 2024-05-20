@@ -69,7 +69,7 @@ void ArmorDetectorNode::subCamInfoCallback(const sensor_msgs::msg::CameraInfo::C
     auto timestamp = std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
     auto np = (std::string(this->get_namespace()) == "/" ? "":std::string(this->get_namespace()));
     auto save_path = "runtime_log/video" + np + "/" + timestamp;
-    RCLCPP_ERROR_STREAM_EXPRESSION(this->get_logger(),
+    RCLCPP_INFO_STREAM_EXPRESSION(this->get_logger(),
         this->get_parameter("is_capture_raw_image").as_bool() ||
         this->get_parameter("is_capture_result_image").as_bool(),
         "Save video path: " << save_path);
@@ -79,7 +79,7 @@ void ArmorDetectorNode::subCamInfoCallback(const sensor_msgs::msg::CameraInfo::C
         if (this->get_parameter("is_capture_raw_image").as_bool()) {
             if (!fs::exists(save_path)) fs::create_directories(save_path);
             m_raw_img_writer = std::make_shared<cv::VideoWriter>(
-                save_path + "/raw_image" + std::to_string(m_save_count++) + ".mp4",
+                save_path + "/raw_image" + std::to_string(m_save_count) + ".mp4",
                 cv::VideoWriter::fourcc('a', 'v', 'c', '1'),
                 30, cv::Size(cam_info->width, cam_info->height));
         }
@@ -87,10 +87,12 @@ void ArmorDetectorNode::subCamInfoCallback(const sensor_msgs::msg::CameraInfo::C
         if (this->get_parameter("is_capture_result_image").as_bool()) {
             if (!fs::exists(save_path)) fs::create_directories(save_path);
             m_result_img_writer = std::make_shared<cv::VideoWriter>(
-                save_path + "/result_image" + std::to_string(m_save_count++) + ".mp4",
+                save_path + "/result_image" + std::to_string(m_save_count) + ".mp4",
                 cv::VideoWriter::fourcc('a', 'v', 'c', '1'),
                 30, cv::Size(cam_info->width, cam_info->height));
         }
+        if (this->get_parameter("is_capture_raw_image").as_bool() ||
+            this->get_parameter("is_capture_result_image").as_bool()) ++m_save_count;
     });
 }
 

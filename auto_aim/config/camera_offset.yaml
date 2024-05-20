@@ -9,9 +9,9 @@ infantry_CS016:
   rpy: "\" 0.00  0.070   0.040\""
 sentry:
     # gimbal 2 camera
-    gimbal2camera_xyz:        "\"0.0  0.026 +0.05\""
-    gimbal2camera_rpy:        "\"0.0 -0.055  0.00\""
-    gimbal2slave_camera_xyz:  "\"0.0 -0.150 +0.00\""
+    gimbal2camera_xyz:        "\"0.0  0.026 +0.050\""
+    gimbal2camera_rpy:        "\"0.0 -0.055  0.000\""
+    gimbal2slave_camera_xyz:  "\"0.0 -0.150 +0.000\""
     gimbal2slave_camera_rpy:  "\"0.0 -0.020  0.018\""
     # gimbal2camera_xyz:        "\"0.0  0.005  0.05\""
     # gimbal2camera_rpy:        "\"0.0  0.000  0.00\""

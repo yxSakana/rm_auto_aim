@@ -21,7 +21,7 @@
         <child link="slave_odom" />
     </joint>
 
-    <link name="gimbal_joint" type="floating">
+    <joint name="gimbal_joint" type="floating">
         <parent link="odom" />
         <child link="gimbal_link" />
     </joint>
