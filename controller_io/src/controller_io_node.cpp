@@ -42,12 +42,13 @@ ControllerIONode::ControllerIONode(const rclcpp::NodeOptions& options)
         : nullptr;
     // Client
     m_serial_cli = this->create_client<SendPackage>("/custom_serial/send");
-    for (size_t i = 0; i < 2; ++i) {
+    int len = color_notify.size();
+    for (size_t i = 0; i < len; ++i) {
         m_detect_color_clis.push_back(std::make_shared<rclcpp::AsyncParametersClient>(this, color_notify[i]));
         m_set_param_futures.emplace_back(ResultFuturePtr());
     }
-    for (size_t i = 2; i < 4; ++i) {
-        m_detect_color_clis.push_back(std::make_shared<rclcpp::AsyncParametersClient>(this, color_notify[i]));
+    for (size_t i = len; i < len * 2; ++i) {
+        m_detect_color_clis.push_back(std::make_shared<rclcpp::AsyncParametersClient>(this, color_notify[i - len]));
         m_set_param_futures.emplace_back(ResultFuturePtr());
     }
 
@@ -175,7 +176,8 @@ void ControllerIONode::trackerCallback(const Target::SharedPtr target_msg) {
 
 void ControllerIONode::setDetectorColor(const rclcpp::Parameter& param) {
     auto names = this->get_parameter("color_notify").as_string_array();
-    for (size_t i = 0; i < 2; ++i) {
+    size_t len = names.size();
+    for (size_t i = 0; i < len; ++i) {
         RCLCPP_INFO(this->get_logger(), "node name: %s", names[i].c_str());
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
         setParam(i, param, [this, i, names]() -> void {
@@ -199,13 +201,14 @@ void ControllerIONode::setDetectorColor(const rclcpp::Parameter& param) {
 
 void ControllerIONode::setOutpostMode(const rclcpp::Parameter& param) {
     auto names = this->get_parameter("color_notify").as_string_array();
-    for (size_t i = 2; i < 4; ++i) {
-        RCLCPP_INFO(this->get_logger(), "node name: %s", names[i].c_str());
+    size_t len = names.size();
+    for (size_t i = len; i < len * 2; ++i) {
+        RCLCPP_INFO(this->get_logger(), "node name: %s", names[i - len].c_str());
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        setParam(i, param, [this, i, names]() -> void {
+        setParam(i - len, param, [this, i, names, len]() -> void {
             auto request = std::make_shared<SendPackage::Request>();
             request->func_code = mSetOutpostMode;
-            request->id = mPCId + i - 2;
+            request->id = mPCId + i - len;
             request->len = 0;
             request->data.resize(0);
             using namespace std::chrono_literals;
@@ -213,7 +216,7 @@ void ControllerIONode::setOutpostMode(const rclcpp::Parameter& param) {
             if (rclcpp::ok()) {
                 m_serial_cli->async_send_request(request);
                 RCLCPP_INFO(this->get_logger(), "Set %s outpost to notify controller (id: %d)!", 
-                    names[i].c_str(), mPCId + int(i) + 10);
+                    names[i - len].c_str(), mPCId + int(i - len) + 10);
             } else {
                 RCLCPP_WARN(this->get_logger(), "rclcpp is not ok!");
             }
