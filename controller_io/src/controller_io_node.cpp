@@ -163,7 +163,10 @@ void ControllerIONode::trackerCallback(const Target::SharedPtr target_msg) {
     request->data.resize(request->len);
     std::memcpy(request->data.data(), &packet, request->len);
 
-    while (!m_serial_cli->wait_for_service(500ms)) RCLCPP_WARN(this->get_logger(), "wait service timeout!");
+    while (!m_serial_cli->wait_for_service(500ms)) {
+        RCLCPP_WARN(this->get_logger(), "wait service timeout!");
+        return;
+    }
     if (rclcpp::ok())
         m_serial_cli->async_send_request(request);
     else
