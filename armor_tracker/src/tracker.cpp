@@ -140,7 +140,7 @@ void Tracker::updateTracker(const auto_aim_interfaces::msg::Armors::SharedPtr ar
                 double yd = std::abs(m_target_predict_state[6] - orientationToYaw(armor.world_pose.orientation));
                 if (yd < yaw_difference) {
                     yaw_difference = yd;
-                    // same_id_armor = &armor;
+                    same_id_armor = &armor;
                 }
             }
         }
@@ -233,7 +233,7 @@ void Tracker::handleArmorJump(const auto_aim_interfaces::msg::Armor& same_id_arm
 }
 
 void Tracker::updateArmorNum(const auto_aim_interfaces::msg::Armor& armor) {
-    if (armor.number == 6)
+    if (armor.number == 10)
         m_armor_num = 3;
     else if (armor.type == "LARGE" && (armor.number == 3 || armor.number == 4 || armor.number == 5))
         m_armor_num = 2;

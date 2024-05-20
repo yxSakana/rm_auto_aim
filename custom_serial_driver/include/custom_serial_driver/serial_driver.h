@@ -18,6 +18,7 @@ class SerialDriverNode: public rclcpp::Node {
 public:
     SerialDriverNode(const rclcpp::NodeOptions& options);
 private:
+    int m_filed_count = 0;
     // Serial port
     std::string m_device_name;
     std::unique_ptr<IoContext> m_io_ctx;

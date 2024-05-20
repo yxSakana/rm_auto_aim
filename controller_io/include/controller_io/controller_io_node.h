@@ -25,6 +25,7 @@ class ControllerIONode: public rclcpp::Node {
     static constexpr int mNeedUpdateTimestamp = 0;
     static constexpr int mGimbalPose = 1;
     static constexpr int mSetTargetColor = 2;
+    static constexpr int mSetOutpostMode = 3;
 public:
     ControllerIONode(const rclcpp::NodeOptions& options);
 private:
@@ -58,6 +59,8 @@ private:
     void trackerCallback(const auto_aim_interfaces::msg::Target::SharedPtr target_msg);
 
     void setDetectorColor(const rclcpp::Parameter& param);
+
+    void setOutpostMode(const rclcpp::Parameter& param);
 
     void setParam(int index,
                   const rclcpp::Parameter& param,

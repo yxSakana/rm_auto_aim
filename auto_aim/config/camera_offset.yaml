@@ -2,18 +2,25 @@ hero:
   xyz: "\"0.00  0.075 -0.54\""
   rpy: "\"0.00  0.00  0.008\""
 infantry_CS004:
-  xyz: "\"0.03364  +0.05  0.15048\""
-  rpy: "\"0.00     -0.05  0.040\""
+  xyz: "\"0.03364  +0.04  0.10048\""
+  rpy: "\"0.00     -0.03  0.012\""
 infantry_CS016:
-  xyz: "\"-0.04  0.09   -0.04\""
-  rpy: "\" 0.00  0.071   0.020\""
+  xyz: "\" 0.01  0.014   0.040\""
+  rpy: "\" 0.00  0.070   0.040\""
 sentry:
     # gimbal 2 camera
-    gimbal2camera_xyz:        "\"0.0  0.005  0.05\""
-    gimbal2camera_rpy:        "\"0.0  0.000  0.00\""
-    gimbal2slave_camera_xyz:  "\"0.0 -0.120 -0.05\""
-    gimbal2slave_camera_rpy:  "\"0.0  0.000  0.00\""
+    gimbal2camera_xyz:        "\"0.0  0.026 +0.05\""
+    gimbal2camera_rpy:        "\"0.0 -0.055  0.00\""
+    gimbal2slave_camera_xyz:  "\"0.0 -0.150 +0.00\""
+    gimbal2slave_camera_rpy:  "\"0.0 -0.020  0.018\""
+    # gimbal2camera_xyz:        "\"0.0  0.005  0.05\""
+    # gimbal2camera_rpy:        "\"0.0  0.000  0.00\""
+    # gimbal2slave_camera_xyz:  "\"0.0 -0.120 -0.05\""
+    # gimbal2slave_camera_rpy:  "\"0.0  0.000  0.00\""
 
 test:
   xyz: "\"0.00  0.13  0.05\""
   rpy: "\"0.00  0.00  0.00\""
+
+# xyz: _ 往右调给小 往低调给大
+# rpy: _ 越远越高 p给正数,  越远越右y给正

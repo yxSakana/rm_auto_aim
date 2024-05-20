@@ -36,6 +36,9 @@ private:
     // Debug Publisher
     bool m_is_debug;
     image_transport::Publisher m_result_img_pub;
+    // Video capture
+    rclcpp::TimerBase::SharedPtr m_save_timer;
+    int m_save_count = 0;
     std::shared_ptr<cv::VideoWriter> m_raw_img_writer;
     std::shared_ptr<cv::VideoWriter> m_result_img_writer;
 

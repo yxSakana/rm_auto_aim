@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstring>
 
+#include <fstream>
 #include <chrono>
 #include <exception>
 #include <vector>
@@ -96,12 +97,19 @@ void SerialDriverNode::initParamenters() {
 }
 
 void SerialDriverNode::reopen() {
+    if (++m_filed_count > 15) {
+        std::ofstream of("runtime_log/serial_port_state");
+        if (of)
+            of << "false", m_filed_count = 0;
+        of.close();
+    }
     RCLCPP_WARN(this->get_logger(), "try reopen serial port: %s", m_device_name.c_str());
     try {
         if (m_driver->port()->is_open())
             m_driver->port()->close();
         m_driver->port()->open();
         RCLCPP_INFO(this->get_logger(), "Success open serial port: %s", m_device_name.c_str());
+        m_filed_count = 0;
     } catch (const std::exception& e) {
         RCLCPP_ERROR(this->get_logger(), "Unable open serial port: %s; %s",
             m_device_name.c_str(), e.what());

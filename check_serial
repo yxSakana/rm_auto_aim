@@ -1,0 +1,13 @@
+#!/bin/bash    
+
+filename=$1
+echo "check filename: ${filename}"
+while true; do
+  content=$(cat ${filename})
+  if [[ ${content} == "false" ]]; then
+      echo "" > ${filename}
+      sudo rm -rf /dev/ttyACM0/
+      echo "reboot"
+  fi
+done
+
