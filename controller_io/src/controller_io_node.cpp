@@ -47,10 +47,6 @@ ControllerIONode::ControllerIONode(const rclcpp::NodeOptions& options)
         m_detect_color_clis.push_back(std::make_shared<rclcpp::AsyncParametersClient>(this, color_notify[i]));
         m_set_param_futures.emplace_back(ResultFuturePtr());
     }
-    for (size_t i = len; i < len * 2; ++i) {
-        m_detect_color_clis.push_back(std::make_shared<rclcpp::AsyncParametersClient>(this, color_notify[i - len]));
-        m_set_param_futures.emplace_back(ResultFuturePtr());
-    }
 
     // Visualization
     m_aim_marker.ns = "aim";
@@ -211,17 +207,16 @@ void ControllerIONode::setDetectorColor(const rclcpp::Parameter& param) {
 void ControllerIONode::setOutpostMode(const rclcpp::Parameter& param) {
     auto names = this->get_parameter("color_notify").as_string_array();
     size_t len = names.size();
-    for (size_t i = len; i < len * 2; ++i) {
-        RCLCPP_INFO(this->get_logger(), "node name: %s", names[i - len].c_str());
+    for (size_t i = 0; i < len; ++i) {
+        RCLCPP_INFO(this->get_logger(), "node name: %s", names[i].c_str());
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        setParam(i - len, param, [this, i, names, len]() -> void {
-            auto request = std::make_shared<SendPackage::Request>();
+        setParam(i, param, [this, i, names]() -> void {
             using namespace std::chrono_literals;
             while (!m_serial_cli->wait_for_service(500ms)) RCLCPP_WARN(this->get_logger(), "wait service timeout!");
             if (rclcpp::ok()) {
                 this->m_is_outpost_flags = true;
                 RCLCPP_INFO(this->get_logger(), "Set %s outpost to notify controller (id: %d)!", 
-                    names[i - len].c_str(), mPCId + int(i - len) + 10);
+                    names[i].c_str(), mPCId + int(i) + 10);
             } else {
                 RCLCPP_WARN(this->get_logger(), "rclcpp is not ok!");
             }
@@ -234,7 +229,7 @@ void ControllerIONode::setParam(
         const std::function<void(void)> callback) {
     auto& cli = m_detect_color_clis[index];
     auto& future = m_set_param_futures[index];
-    auto node_name = this->get_parameter("color_notify").as_string_array()[index].c_str();
+    std::string node_name = this->get_parameter("color_notify").as_string_array()[index];
 
     if (!cli->service_is_ready()) {
         RCLCPP_WARN_THROTTLE(get_logger(), *(this->get_clock()), 200, "Service not ready, skipping parameter set");
@@ -242,13 +237,17 @@ void ControllerIONode::setParam(
     }
 
     using namespace std::chrono_literals;
+    std::string val_str =
+        param.get_type() == rclcpp::ParameterType::PARAMETER_STRING ?
+        param.as_string():
+        param.as_bool()? "true": "false";
     if (!future.valid() ||
         future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
         RCLCPP_INFO(get_logger(),
             "Setting %s %s to %s...", param.get_name().c_str(),
-            node_name, param.as_string().c_str());
+            node_name.c_str(), val_str.c_str());
         future = cli->set_parameters(
-            { param }, [this, param, node_name, callback](const ResultFuturePtr& results) -> void {
+            { param }, [this, param, node_name, callback, val_str](const ResultFuturePtr& results) -> void {
                 for (const auto& result: results.get()) {
                     if (!result.successful) {
                         RCLCPP_ERROR(get_logger(), "Failed to set parameter: %s", result.reason.c_str());
@@ -256,7 +255,7 @@ void ControllerIONode::setParam(
                     }
                 }
                 RCLCPP_INFO(get_logger(), "Successfully set %s %s to %s!",
-                    param.get_name().c_str(), node_name, param.as_string().c_str());
+                    param.get_name().c_str(), node_name.c_str(), val_str.c_str());
                 callback();
         });
     } else {
