@@ -25,7 +25,6 @@ class ControllerIONode: public rclcpp::Node {
     static constexpr int mNeedUpdateTimestamp = 0;
     static constexpr int mGimbalPose = 1;
     static constexpr int mSetTargetColor = 2;
-    static constexpr int mSetOutpostMode = 3;
 public:
     ControllerIONode(const rclcpp::NodeOptions& options);
 private:
@@ -45,6 +44,8 @@ private:
     std::array<bool, 2> m_trakcer_state;
     uint8_t m_is_detector_configured;
     // bool m_is_sentry;
+    bool m_is_outpost = false;
+    bool m_is_outpost_flags = false;
 
     // visualization
     visualization_msgs::msg::Marker m_aim_marker;

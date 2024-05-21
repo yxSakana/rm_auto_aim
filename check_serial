@@ -3,6 +3,10 @@
 filename=$1
 echo "check filename: ${filename}"
 while true; do
+  sleep 5
+  if [ ! -f ${filename} ]; then
+    continue
+  fi
   content=$(cat ${filename})
   if [[ ${content} == "false" ]]; then
       echo "" > ${filename}

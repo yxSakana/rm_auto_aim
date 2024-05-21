@@ -16,7 +16,7 @@ struct AutoAimPacket {
 };
 
 struct GimbalPosePacket {
-    uint64_t timestamp;
+    uint64_t is_outpost;
     float w, x, y, z;
     uint16_t delay;
     float px, py, pz;

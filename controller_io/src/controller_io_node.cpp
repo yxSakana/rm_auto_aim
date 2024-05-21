@@ -118,6 +118,15 @@ void ControllerIONode::serialHandle(const Receive::SharedPtr serial_msg) {
 
                 m_c_aim_pub->publish(aim_msg);
                 m_marker_pub->publish(m_marker_array);
+
+                // Outpost flags
+                if (m_is_outpost != gimbal_pose_pkt.is_outpost) {
+                    this->setOutpostMode(rclcpp::Parameter("is_outpost", bool(gimbal_pose_pkt.is_outpost)));
+                    if (m_is_outpost_flags) {
+                        m_is_outpost = gimbal_pose_pkt.is_outpost;
+                        m_is_outpost_flags = false;
+                    }
+                }
                 break;
             }
             case mSetTargetColor: {
@@ -207,14 +216,10 @@ void ControllerIONode::setOutpostMode(const rclcpp::Parameter& param) {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
         setParam(i - len, param, [this, i, names, len]() -> void {
             auto request = std::make_shared<SendPackage::Request>();
-            request->func_code = mSetOutpostMode;
-            request->id = mPCId + i - len;
-            request->len = 0;
-            request->data.resize(0);
             using namespace std::chrono_literals;
             while (!m_serial_cli->wait_for_service(500ms)) RCLCPP_WARN(this->get_logger(), "wait service timeout!");
             if (rclcpp::ok()) {
-                m_serial_cli->async_send_request(request);
+                this->m_is_outpost_flags = true;
                 RCLCPP_INFO(this->get_logger(), "Set %s outpost to notify controller (id: %d)!", 
                     names[i - len].c_str(), mPCId + int(i - len) + 10);
             } else {
