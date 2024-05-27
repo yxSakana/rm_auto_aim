@@ -24,9 +24,7 @@ Requires=docker.service
 After=docker.service
 
 [Service]
-Restart=always
 ExecStart=docker start rm_auto_aim
-ExecStop=docker stop rm_auto_aim
 
 [Install]
 WantedBy=multi-user.target
