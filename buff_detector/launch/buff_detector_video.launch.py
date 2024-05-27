@@ -12,9 +12,6 @@ def generate_launch_description():
         executable="component_container",
         output="both"
     )
-
-
-
     load_composable_nodes = LoadComposableNodes(
         # DeclareLaunchArgument(name="video_filename",
         #                       default_value=TextSubstitution(text="blue_1.MP4")),
